@@ -11,4 +11,3 @@ Route::get('/user', function (Request $request) {
 Route::post('/realtor/register', [AuthController::class, 'register']);
 Route::post('/realtor/login', [AuthController::class, 'login']);
 Route::middleware('throttle:3,1')->post('/realtorlogout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-?>

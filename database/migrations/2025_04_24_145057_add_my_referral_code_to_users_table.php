@@ -6,19 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('my_referral_code', 6)->unique();
+            $table->string('my_referral_code')->nullable(); // <-- fixed
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
@@ -26,3 +20,4 @@ return new class extends Migration
         });
     }
 };
+
