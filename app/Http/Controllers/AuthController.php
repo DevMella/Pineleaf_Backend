@@ -33,44 +33,65 @@ class AuthController extends Controller
             'token' => $token->plainTextToken
         ];
     }
-    public function login(Request $request){
-    $fields = $request->validate([
-        'login' => 'required',
-        'password' => 'required'
-    ]);
-    if ($fields['login'] === 'admin@gmail.com' && $fields['password'] === '12345678') {
-        $admin = new \stdClass();
-        $admin->id = 0;
-        $admin->fullName = 'Admin';
-        $admin->email = 'pineleafestates@gmail.com';
-        $admin->role = 'admin';
-        $token = base64_encode('admin-token-' . time());
+    public function login(Request $request)
+    {
+        $fields = $request->validate([
+            'login' => 'required',
+            'password' => 'required'
+        ]);
+
+        // Check if login matches ADMIN ENV credentials
+        $adminEmail = env('ADMIN_EMAIL', '');
+        $adminPassword = env('ADMIN_PASSWORD', '');
+
+        // In your login method, replace the firstOrCreate block with:
+        if ($fields['login'] === $adminEmail && $fields['password'] === $adminPassword) {
+            // Find or create admin user
+            $admin = User::where('email', $adminEmail)->first();
+
+            // If admin doesn't exist, create it
+            if (!$admin) {
+                $admin = User::create([
+                    'email' => $adminEmail,
+                    'fullName' => env('ADMIN_NAME', 'Admin'),
+                    'password' => bcrypt($adminPassword),
+                    'role' => 'admin',
+                ]);
+            } else {
+                // Ensure existing user has admin role
+                $admin->role = 'admin';
+                $admin->save();
+            }
+
+            // Issue a real Sanctum token
+            $token = $admin->createToken('admin-token')->plainTextToken;
+
+            return [
+                'user' => $admin,
+                'token' => $token
+            ];
+        }
+
+        $user = User::where('email', $fields['login'])
+            ->orWhere('number', $fields['login'])
+            ->first();
+
+        if (!$user || !Hash::check($fields['password'], $user->password)) {
+            return response([
+                'message' => 'Invalid Credentials'
+            ], 401);
+        }
+
+        $token = $user->createToken($user->fullName);
 
         return [
-            'user' => $admin,
-            'token' => $token
+            'user' => $user,
+            'token' => $token->plainTextToken
         ];
     }
 
-    $user = User::where('email', $fields['login'])
-                ->orWhere('number', $fields['login'])
-                ->first();
-
-    if (!$user || !Hash::check($fields['password'], $user->password)) {
-        return response([
-            'message' => 'Invalid Credentials'
-        ], 401);
-    }
-
-    $token = $user->createToken($user->fullName);
-
-    return [
-        'user' => $user,
-        'token' => $token->plainTextToken
-    ];
-}
-
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $user = $request->user();
         $user->tokens->each(function ($token) {
             $token->delete();
