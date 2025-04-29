@@ -25,9 +25,18 @@ class AuthController extends Controller
             $filePath = $paymentFile->storeAs('payments', $fileName, 'public');
             $fields['payment'] = $filePath;
         }
-        $fields['my_referral_code'] = Str::upper(Str::random(6));
+        try {
+            $randomReferralCode = Str::upper(Str::random(6));
+            
+            $fields['my_referral_code'] = $randomReferralCode;
+        } catch (\Exception $e) {
+            $fields['my_referral_code'] = null;
+        }
+    
         $user = User::create($fields);
+        
         $token = $user->createToken($request->fullName);
+    
         return [
             'user' => $user,
             'token' => $token->plainTextToken
@@ -40,16 +49,12 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        // Check if login matches ADMIN ENV credentials
         $adminEmail = env('ADMIN_EMAIL', '');
         $adminPassword = env('ADMIN_PASSWORD', '');
 
-        // In your login method, replace the firstOrCreate block with:
         if ($fields['login'] === $adminEmail && $fields['password'] === $adminPassword) {
-            // Find or create admin user
             $admin = User::where('email', $adminEmail)->first();
 
-            // If admin doesn't exist, create it
             if (!$admin) {
                 $admin = User::create([
                     'email' => $adminEmail,
@@ -58,12 +63,10 @@ class AuthController extends Controller
                     'role' => 'admin',
                 ]);
             } else {
-                // Ensure existing user has admin role
                 $admin->role = 'admin';
                 $admin->save();
             }
 
-            // Issue a real Sanctum token
             $token = $admin->createToken('admin-token')->plainTextToken;
 
             return [

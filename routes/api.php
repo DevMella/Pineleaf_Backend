@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DepositController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -12,9 +13,9 @@ Route::get('/user', function (Request $request) {
 Route::post('/realtor/register', [AuthController::class, 'register']);
 Route::post('/realtor/login', [AuthController::class, 'login']);
 Route::middleware('throttle:3,1')->post('/realtorlogout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/manual-deposit-info', [DepositController::class, 'manualInfo'])->middleware('auth:sanctum');
+Route::get('/manual-deposit-upload', [DepositController::class, 'uploadProof'])->middleware('auth:sanctum');
 
-
-// Admin routes
 Route::get('/admin/allusers', [UserController::class, 'index'])->middleware('auth:sanctum');
 Route::delete('/admin/deleteuser/{id}', function (Request $request, $id) {
     $user = $request->user();
@@ -22,6 +23,5 @@ Route::delete('/admin/deleteuser/{id}', function (Request $request, $id) {
         return response()->json(['message' => 'Unauthorized'], 403);
     }
 
-    // If user is admin, forward to the controller
     return app(UserController::class)->destroy($id);
 })->middleware('auth:sanctum');
