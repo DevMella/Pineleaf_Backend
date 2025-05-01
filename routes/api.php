@@ -1,10 +1,15 @@
 <?php
 
-use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepositController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    // create a documentation page
+    return view('welcome');
+})->name('home');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -16,12 +21,10 @@ Route::middleware('throttle:3,1')->post('/realtorlogout', [AuthController::class
 Route::get('/manual-deposit-info', [DepositController::class, 'manualInfo'])->middleware('auth:sanctum');
 Route::get('/manual-deposit-upload', [DepositController::class, 'uploadProof'])->middleware('auth:sanctum');
 
-Route::get('/admin/allusers', [UserController::class, 'index'])->middleware('auth:sanctum');
-Route::delete('/admin/deleteuser/{id}', function (Request $request, $id) {
-    $user = $request->user();
-    if (!$user || $user->role !== 'admin') {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
 
-    return app(UserController::class)->destroy($id);
-})->middleware('auth:sanctum');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/allusers', [UserController::class, 'index']);
+    Route::get('/admin/users/search', [UserController::class, 'search']);
+    Route::delete('/admin/users/{id}', [UserController::class, 'destroy']);
+});
