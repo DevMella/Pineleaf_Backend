@@ -17,22 +17,20 @@ class DepositController extends Controller
         ], 200);
     }
 
-    // public function uploadProof(Request $request)
-    // {
-    //     $request->validate([
-    //         'user_id' => 'required|integer',
-    //         'amount' => 'required|numeric',
-    //         'payment_proof' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-    //     ]);
+    public function uploadProof(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|integer',
+            'amount' => 'required|numeric',
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
 
-    //     $path = $request->file('payment_proof')->store('proofs', 'public');
+        $path = $request->file('payment_proof')->store('proofs', 'public');
 
-    //     // Save to DB if needed (e.g., ManualDeposit model)
-
-    //     return response()->json([
-    //         'message' => 'Proof uploaded successfully',
-    //         'path' => $path
-    //     ]);
-    // }
+        return response()->json([
+            'message' => 'Proof uploaded successfully',
+            'path' => $path
+        ]);
+    }
 
 }
