@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
-use App\Models\Deposit;
+use App\Models\Transaction; 
 class DepositController extends Controller
 {
     public function manualInfo(Request $request){
@@ -19,7 +19,8 @@ class DepositController extends Controller
         ], 200);
     }
 
-    public function uploadProof(Request $request)
+
+public function uploadProof(Request $request)
 {
     $request->validate([
         'user_id' => 'required|integer|exists:users,id',
@@ -32,7 +33,7 @@ class DepositController extends Controller
 
     $ref_no = 'D_' . Carbon::now()->format('Ymd') . '_' . Str::upper(Str::random(6));
 
-    $deposit = Deposit::create([
+    $transaction = Transaction::create([
         'user_id' => $request->user_id,
         'amount' => $request->amount,
         'transaction_type' => 'deposit',
@@ -43,7 +44,7 @@ class DepositController extends Controller
     ]);
 
     return response()->json([
-        'message' => 'Deposit submitted successfully',
+        'message' => 'Transaction submitted successfully',
         'ref_no' => $ref_no,
         'path' => $path
     ]);

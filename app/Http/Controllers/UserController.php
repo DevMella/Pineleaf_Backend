@@ -70,7 +70,7 @@ class UserController extends Controller
         $query = User::where('role', '!=', 'admin');
 
         // First, let's determine what columns actually exist in our users table
-        $columns = \Schema::getColumnListing('users');
+        $columns = Schema::getColumnListing('users');
 
         // You can add search functionality
         if ($request->has('search') && !empty($request->input('search'))) {
