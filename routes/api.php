@@ -12,9 +12,9 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/realtor/register', [AuthController::class, 'register']);
 Route::post('/realtor/login', [AuthController::class, 'login']);
-Route::middleware('throttle:3,1')->post('/realtorlogout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::middleware('throttle:3,1')->post('/realtor/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/manual-deposit-info', [DepositController::class, 'manualInfo'])->middleware('auth:sanctum');
-Route::get('/manual-deposit-upload', [DepositController::class, 'uploadProof'])->middleware('auth:sanctum');
+Route::post('/manual-deposit-upload', [DepositController::class, 'uploadProof'])->middleware('auth:sanctum');
 
 Route::get('/admin/allusers', [UserController::class, 'index'])->middleware('auth:sanctum');
 Route::delete('/admin/deleteuser/{id}', function (Request $request, $id) {
