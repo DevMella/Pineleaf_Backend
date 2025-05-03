@@ -18,13 +18,15 @@
 
         h1,
         h2 {
-            color: #007bff;
+            color: #2F5318;
+            ;
         }
 
         details {
             background: #fff;
             padding: 15px;
-            border-left: 5px solid #007bff;
+            border-left: 5px solid #2F5318;
+            ;
             margin-bottom: 20px;
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
         }
@@ -44,11 +46,13 @@
 
 <body>
     <h1>API Documentation</h1>
-    <p>Base URL: <code>http://localhost:9000/api/user</code></p>
+    </summary>
+    <p><strong>Endpoint:</strong>
+    <p>Base URL: <code style="background-color: #2F531833;">http://localhost:8000/api/</code></p>
 
     <details>
         <summary>Register User</summary>
-        <p><strong>Endpoint:</strong> <code>POST /create</code></p>
+        <p><strong>Endpoint:</strong><code>POST /create</code></p>
         <p><strong>Request Body:</strong></p>
         <pre>
 {
