@@ -41,6 +41,7 @@ class Property extends Model
     protected $casts = [
         'images' => 'array',
         'landmark' => 'array',
+        'property_features' => 'array',
         'price' => 'decimal:2',
         'total_units' => 'integer',
         'unit_sold' => 'integer',

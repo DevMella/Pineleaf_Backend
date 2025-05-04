@@ -33,7 +33,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/admin/users/{id}', [UserController::class, 'destroy']);
 });
 
+// PROPERTIES ROUTES
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/properties', [PropertyController::class, 'index']);
     Route::get('/latest-properties', [PropertyController::class, 'latest']);
+    Route::post('/properties/create', [PropertyController::class, 'create']);
+    Route::get('/properties/{id}', [PropertyController::class, 'show']);
+    Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
+    Route::get('/properties/search', [PropertyController::class, 'search']);
 });
