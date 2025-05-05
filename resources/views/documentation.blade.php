@@ -18,13 +18,15 @@
 
         h1,
         h2 {
-            color: #007bff;
+            color: #2F5318;
+            ;
         }
 
         details {
             background: #fff;
             padding: 15px;
-            border-left: 5px solid #007bff;
+            border-left: 5px solid #2F5318;
+            ;
             margin-bottom: 20px;
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
         }
@@ -44,11 +46,13 @@
 
 <body>
     <h1>API Documentation</h1>
-    <p>Base URL: <code>http://localhost:9000/api/user</code></p>
+    </summary>
+    <p><strong>Endpoint:</strong>
+    <p>Base URL: <code style="background-color: #2F531833;">http://localhost:8000/api/</code></p>
 
     <details>
         <summary>Register User</summary>
-        <p><strong>Endpoint:</strong> <code>POST /create</code></p>
+        <p><strong>Endpoint:</strong><code>POST /create</code></p>
         <p><strong>Request Body:</strong></p>
         <pre>
 {
@@ -140,6 +144,80 @@
         <pre>
 {
     "message": "User deleted successfully."
+}
+      </pre>
+    </details>
+
+
+
+    <h1>Search Property</h1>
+    <details>
+        <summary>Search Property</summary>
+        <p><strong>Endpoint:</strong> <code>GET /property/search</code></p>
+        <p><strong>Request Body:</strong></p>
+        <pre>
+            # Basic Search Examples
+
+# 0. Basic search with no filters (returns all properties with default pagination)
+GET /api/properties/search
+
+# 1. Search by name
+GET /api/properties/search?name=oganiru
+
+# 2. Search by location
+GET /api/properties/search?location=Lagos
+
+# 3. Search by price range
+GET /api/properties/search?min_price=100000&max_price=500000
+
+# 4. Search by location and price range
+GET /api/properties/search?location=Lagos&min_price=100000&max_price=500000
+
+# 5. Search with pagination
+GET /api/properties/search?page=1&per_page=20
+
+# Advanced Search Examples
+
+# 6. Search by property type
+GET /api/properties/search?type=land
+
+# 7. Search by property purpose
+GET /api/properties/search?purpose=residential
+
+# 8. Complex search with multiple filters
+GET /api/properties/search?location=Lagos&min_price=200000&max_price=1000000&type=house&purpose=residential
+
+# 9. Search with custom sorting
+GET /api/properties/search?sort_by=price&sort_direction=asc
+
+# 10. Search for properties with specific document title
+GET /api/properties/search?document_title=Certificate+of+Occupancy
+
+# Full Example with All Parameters
+GET /api/properties/search?location=Lagos&min_price=100000&max_price=500000&type=house&purpose=residential&document_title=Certificate+of+Occupancy&has_units_available=true&size=500sqm&page=1&per_page=10&sort_by=price&sort_direction=asc
+        </pre>
+        <p><strong>Response:</strong></p>
+        <pre>
+{
+    "message": "Properties found successfully.",
+    "data": [
+        {
+            "id": 1,
+            "location": "Lagos",
+            "price": 300000,
+            "type": "house",
+            "purpose": "residential",
+            "document_title": "Certificate of Occupancy"
+        },
+        {
+            "id": 2,
+            "location": "Abuja",
+            "price": 500000,
+            "type": "land",
+            "purpose": "commercial",
+            "document_title": "Deed of Assignment"
+        }
+    ]
 }
       </pre>
     </details>

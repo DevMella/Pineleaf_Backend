@@ -19,21 +19,36 @@ class UserController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Get pagination parameters from the request
-        $perPage = $request->input('per_page', 50);
+        try {
+            $users = User::latest()->paginate(05);
 
-        // Apply additional filters if needed
-        $query = User::where('role', '!=', 'admin');
+            if ($users->isEmpty()) {
+                return response()->json([
+                    'message' => 'No data found',
+                    'data' => [
+                        'pagination' => [
+                            'total' => 0,
+                            'per_page' => 50,
+                            'current_page' => 1,
+                            'last_page' => 0
+                        ],
+                        'data' => []
+                    ],
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'data' => $users
+                ]);
+            }
 
-        // Apply sorting if requested
-        $sortBy = $request->input('sort_by', 'created_at');
-        $sortDir = $request->input('sort_dir', 'desc');
-        $query->orderBy($sortBy, $sortDir);
-
-        // Execute the paginated query
-        $users = $query->paginate($perPage);
-
-        return response()->json($users);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve users',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
