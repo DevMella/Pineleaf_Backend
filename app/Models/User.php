@@ -23,11 +23,11 @@ class User extends Authenticatable
         'userName',
         'email',
         'number',
-        'payment',
         'referral_code',
         'password',
         'my_referral_code'
     ];
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -50,5 +50,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
     }
 }

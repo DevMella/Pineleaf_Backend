@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DepositController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\PurchaseControllerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    // create a documentation page
     return view('welcome');
 })->name('home');
 
@@ -18,8 +18,8 @@ Route::get('/user', function (Request $request) {
 Route::post('/realtor/register', [AuthController::class, 'register']);
 Route::post('/realtor/login', [AuthController::class, 'login']);
 Route::middleware('throttle:3,1')->post('/realtor/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-Route::get('/manual-deposit-info', [DepositController::class, 'manualInfo'])->middleware('auth:sanctum');
-Route::post('/manual-deposit-upload', [DepositController::class, 'uploadProof'])->middleware('auth:sanctum');
+Route::get('/manual-purchase-info', [PurchaseController::class, 'manualInfo'])->middleware('auth:sanctum');
+Route::post('/manual-purchase-upload', [PurchaseController::class, 'uploadProof'])->middleware('auth:sanctum');
 
 
 

@@ -13,6 +13,7 @@ class Transaction extends Model
         'ref_no',
         'property_purchased_id',
         'proof_of_payment',
+        'units',
         'status',
     ];
     
