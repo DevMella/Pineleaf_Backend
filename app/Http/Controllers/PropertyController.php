@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\JsonResponse;
 
 class PropertyController extends Controller
 {
@@ -218,7 +216,108 @@ class PropertyController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function search(Request $request)
-    {
-        
+{
+    try {
+        $query = Property::query();
+
+        // Filter by name (checks name and estate_name)
+        if ($request->filled('name')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'LIKE', '%' . $request->input('name') . '%')
+                    ->orWhere('estate_name', 'LIKE', '%' . $request->input('name') . '%');
+            });
+        }
+
+        // Filter by location
+        if ($request->filled('location')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('location', 'LIKE', '%' . $request->input('location') . '%')
+                    ->orWhere('estate_name', 'LIKE', '%' . $request->input('location') . '%');
+            });
+        }
+
+        // Filter by price range
+        if ($request->filled('min_price') && is_numeric($request->min_price)) {
+            $query->where('price', '>=', $request->min_price);
+        }
+
+        if ($request->filled('max_price') && is_numeric($request->max_price)) {
+            $query->where('price', '<=', $request->max_price);
+        }
+
+        // Filter by type
+        if ($request->filled('type') && in_array($request->type, ['land', 'house'])) {
+            $query->where('type', $request->type);
+        }
+
+        // Filter by purpose
+        if ($request->filled('purpose') && in_array($request->purpose, ['residential', 'commercial', 'mixed_use'])) {
+            $query->where('purpose', $request->purpose);
+        }
+
+        // Filter by size
+        if ($request->filled('size')) {
+            $query->where('size', 'LIKE', '%' . $request->input('size') . '%');
+        }
+
+        // Filter by document title
+        if ($request->filled('document_title')) {
+            $query->where('document_title', 'LIKE', '%' . $request->input('document_title') . '%');
+        }
+
+        // Filter by availability
+        if ($request->has('units') && $request->boolean('units')) {
+            $query->where('total_units', '>', 0);
+        }
+
+        // Sorting and pagination
+        $perPage = (int) $request->get('per_page', 10);
+        $sortField = $request->get('sort_by', 'created_at');
+        $sortDirection = strtolower($request->get('sort_direction', 'desc'));
+
+        // Validate sort direction
+        if (!in_array($sortDirection, ['asc', 'desc'])) {
+            $sortDirection = 'desc';
+        }
+
+        $query->orderBy($sortField, $sortDirection);
+
+        // Paginate results
+        $properties = $query->paginate($perPage);
+
+        if ($properties->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No properties found',
+                'data' => [],
+            ], 404);
+        }
+
+        // Decode JSON fields
+        $properties->getCollection()->transform(function ($property) {
+            $property->landmark = json_decode($property->landmark);
+            $property->property_features = json_decode($property->property_features);
+            $property->images = json_decode($property->images);
+            return $property;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Properties retrieved successfully',
+            'data' => $properties,
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Property search error', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to search properties',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
+
 }
