@@ -4,7 +4,6 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\PurchaseControllerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,15 +19,13 @@ Route::get('/user', function (Request $request) {
 Route::post('/realtor/register', [AuthController::class, 'register']);
 Route::post('/realtor/login', [AuthController::class, 'login']);
 Route::middleware('throttle:3,1')->post('/realtor/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-<<<<<<< HEAD
 Route::get('/manual-purchase-info', [PurchaseController::class, 'manualInfo'])->middleware('auth:sanctum');
 Route::post('/manual-purchase-upload', [PurchaseController::class, 'uploadProof'])->middleware('auth:sanctum');
-=======
+
 
 // PAYMENT ROUTES
-Route::get('/manual-deposit-info', [DepositController::class, 'manualInfo'])->middleware('auth:sanctum');
-Route::post('/manual-deposit-upload', [DepositController::class, 'uploadProof'])->middleware('auth:sanctum');
->>>>>>> 5229105afebd8cb3004a0546f0e0e0ae1e71a237
+Route::get('/manual-deposit-info', [PurchaseController::class, 'manualInfo'])->middleware('auth:sanctum');
+Route::post('/manual-deposit-upload', [PurchaseController::class, 'uploadProof'])->middleware('auth:sanctum');
 
 
 // ALL ADMIN ROUTES
