@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    protected $fillable = ['user_id', 'payment_type','amount', 'gateway_ref','ref_no'];
+    protected $fillable = ['user_id', 'ref_no', 'transaction_id'];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Transaction::class);
     }
 }

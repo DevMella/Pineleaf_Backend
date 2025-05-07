@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('referrals')) {
          Schema::create('referrals', function (Blueprint $table) {
         $table->id();
         $table->unsignedBigInteger('referre_id'); // The new user
@@ -21,9 +22,10 @@ return new class extends Migration
         $table->timestamps();
 
         // Foreign key constraints (optional but good practice)
-        $table->foreign('referre_id')->references('id')->on('users')->onDelete('cascade');
+        $table->foreign('refeirre_id')->references('id')->on('users')->onDelete('cascade');
         $table->foreign('referral_id')->references('id')->on('users')->onDelete('cascade');
     });
+}
     }
 
     /**

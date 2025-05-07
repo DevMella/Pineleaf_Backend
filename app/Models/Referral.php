@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Referral extends Model
 {
-    protected $fillable = ['referral_id', 'referee_id'];
+    protected $fillable = ['referral_id', 'referee_id', 'level'];
 }

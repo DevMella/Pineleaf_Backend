@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('properties')) {
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->string('flyer')->nullable();
             $table->timestamps();
         });
+    }
     }
 
     /**

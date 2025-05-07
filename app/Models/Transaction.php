@@ -16,5 +16,9 @@ class Transaction extends Model
         'units',
         'status',
     ];
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
     
 }

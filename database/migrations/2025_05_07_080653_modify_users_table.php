@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->unsignedBigInteger('referred_by')->nullable()->after('id');
-            $table->foreign('referred_by')->references('id')->on('users')->onDelete('set null');
+            $table->boolean('enabled')->default(false);
         });
     }
 
@@ -22,9 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['referred_by']);
-            $table->dropColumn('referred_by');
-        });
+        //
     }
 };
