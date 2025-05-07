@@ -44,9 +44,10 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/properties/search', [PropertyController::class, 'search']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/properties/create', [PropertyController::class, 'create']);
     Route::get('/properties', [PropertyController::class, 'index']);
     Route::get('/latest-properties', [PropertyController::class, 'latest']);
-    Route::post('/properties/create', [PropertyController::class, 'create']);
+    Route::put('/properties/{id}', [PropertyController::class, 'update']);
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
 });

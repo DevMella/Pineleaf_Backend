@@ -315,4 +315,127 @@ class PropertyController extends Controller
             ], 500);
         }
     }
+    /**
+     * Update the specified property in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $property = Property::find($id);
+            if (!$property) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Property not found',
+                ], 404);
+            }
+            Log::info('Incoming request data:', $request->all());
+
+            // First validate non-file fields
+            $validatedData = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'estate_name' => 'nullable|string|max:255',
+                'description' => 'sometimes|string',
+                'location' => 'sometimes|string|max:255',
+                'landmark' => 'sometimes|string', // Changed from sometimes to sometimes|string
+                'size' => 'sometimes|string|max:255',
+                'land_condition' => 'sometimes|string|max:255',
+                'document_title' => 'sometimes|string|max:255',
+                'property_features' => 'sometimes|string', // Changed from sometimes to sometimes|string
+                'type' => 'sometimes|in:land,house',
+                'purpose' => 'sometimes|in:residential,commercial,mixed_use',
+                'price' => 'sometimes|numeric',
+                'total_units' => 'sometimes|integer',
+                'images' => 'sometimes|array|max:4',
+                'images.*' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+                'flyer' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            ]);
+
+            Log::info('Validated data:', $validatedData);
+
+            // Handle JSON fields
+            foreach (['landmark', 'property_features'] as $field) {
+                if ($request->has($field)) {
+                    $value = $request->input($field);
+                    if (is_string($value)) {
+                        $decoded = json_decode($value, true);
+                        $validatedData[$field] = $decoded !== null ? json_encode($decoded) : json_encode([]);
+                    } elseif (is_array($value)) {
+                        $validatedData[$field] = json_encode($value);
+                    }
+                }
+            }
+
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                $propertyName = strtolower(preg_replace(
+                    '/[^a-zA-Z0-9]/',
+                    '_',
+                    $property->name ?? $request->input('name') ?? $request->input('estate_name') ?? 'property'
+                ));
+                $folderPath = "properties/images/{$propertyName}";
+
+                // Delete old images if needed
+                // Storage::disk('public')->deleteDirectory($folderPath);
+
+                Storage::disk('public')->makeDirectory($folderPath);
+                $images = [];
+
+                foreach ($request->file('images') as $i => $image) {
+                    if ($image->isValid()) {
+                        $path = $image->storeAs(
+                            $folderPath,
+                            ($i + 1) . '.' . $image->getClientOriginalExtension(),
+                            'public'
+                        );
+                        $images[] = Storage::url($path);
+                    }
+                }
+
+                $validatedData['images'] = json_encode($images);
+            }
+
+            // Handle flyer upload
+            if ($request->hasFile('flyer') && $request->file('flyer')->isValid()) {
+                $propertyName = strtolower(preg_replace(
+                    '/[^a-zA-Z0-9]/',
+                    '_',
+                    $property->name ?? $request->input('name') ?? $request->input('estate_name') ?? 'property'
+                ));
+
+                $flyer = $request->file('flyer');
+                $path = $flyer->storeAs(
+                    'properties/flyers',
+                    "{$propertyName}_flyer_" . time() . '.' . $flyer->getClientOriginalExtension(),
+                    'public'
+                );
+                $validatedData['flyer'] = Storage::url($path);
+            }
+
+            $property->update(array_filter($validatedData));
+
+            Log::info('Updated property:', $property->fresh()->toArray());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Property updated successfully',
+                'data' => $property->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Property update error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update property',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
