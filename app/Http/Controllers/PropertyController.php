@@ -315,6 +315,8 @@ class PropertyController extends Controller
             ], 500);
         }
     }
+
+    
     /**
      * Update the specified property in storage.
      */

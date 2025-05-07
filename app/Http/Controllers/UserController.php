@@ -73,4 +73,32 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
+    public function search(Request $request)
+    {
+        if (!$request->user()?->role === 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $perPage = max((int) $request->input('per_page', 50), 1);
+        $columns = Schema::getColumnListing('users');
+        $query = User::where('role', '!=', 'admin');
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search, $columns) {
+                foreach (['email', 'fullName', 'my_referral_code'] as $field) {
+                    if (in_array($field, $columns)) {
+                        $q->orWhere($field, 'like', "%{$search}%");
+                    }
+                }
+                if (in_array('number', $columns) && is_numeric($search)) {
+                    $q->orWhere('number', $search);
+                }
+            });
+        }
+
+        $sortBy = $request->input('sort_by', 'created_at');
+        $query->orderBy(in_array($sortBy, $columns) ? $sortBy : (in_array('created_at', $columns) ? 'created_at' : 'id'), 'desc');
+
+        return response()->json($query->paginate($perPage));
+    }
 }
