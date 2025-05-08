@@ -146,7 +146,7 @@ class AuthController extends Controller
             $no_users = User::where('role', '!=', 'admin')->count();
             $no_properties = Property::count();
             $no_purchases = Payment::count();
-            $total_balance = Payment::where('payment_type', '=', 'purchase')->sum('amount');
+            $total_balance = Transaction::where('transaction_type', '=', 'purchase')->sum('amount');
             $total_bonus = Referral::sum('bonus');
 
             return response()->json([
