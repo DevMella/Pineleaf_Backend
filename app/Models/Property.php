@@ -29,8 +29,7 @@ class Property extends Model
         'purpose',
         'price',
         'total_units',
-        'unit_sold',
-        'flyer',
+        'flyer'
     ];
 
     /**

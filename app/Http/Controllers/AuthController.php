@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Models\Payment;
+use App\Models\Property;
 use Carbon\Carbon;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Log;
@@ -45,7 +46,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'my_referral_code' => $myReferralCode,
             'referral_code' => $request->referral_code,
-            'enabled' => $request->payment_method === 'manual' ? true : false, 
+            'enabled' => $request->payment_method === 'manual' ? true : false,
         ]);
 
         if ($request->payment_method === 'manual' && $request->hasFile('payment')) {
@@ -109,7 +110,7 @@ class AuthController extends Controller
                 'message' => 'Please complete the payment via Paystack.',
                 'payment_url' => $paymentData['authorization_url'],
                 'reference' => $paymentData['reference'],
-                'user_id' => $user->id, 
+                'user_id' => $user->id,
             ]);
         }
     }
@@ -133,19 +134,34 @@ class AuthController extends Controller
                     'fullName' => env('ADMIN_NAME', 'Admin'),
                     'password' => bcrypt($adminPassword),
                     'role' => 'admin',
-                    'enabled' => true, 
+                    'enabled' => true,
                 ]);
             } else {
                 $admin->role = 'admin';
                 $admin->save();
             }
-
+            $admin->tokens()->delete(); // Revoke all previous tokens
             $token = $admin->createToken('admin-token')->plainTextToken;
 
-            return [
-                'user' => $admin,
-                'token' => $token
-            ];
+            $no_users = User::where('role', '!=', 'admin')->count();
+            $no_properties = Property::count();
+            $no_purchases = Payment::count();
+            $total_balance = Payment::where('payment_type', '=', 'purchase')->sum('amount');
+            $total_bonus = Referral::sum('bonus');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Admin data retrieved successfully',
+                'data' => [
+                    'user' => $admin,
+                    'token' => $token,
+                    'no_users' => $no_users,
+                    'no_properties' => $no_properties,
+                    'no_purchases' => $no_purchases,
+                    'total_balance' => $total_balance,
+                    'total_bonus' => $total_bonus
+                ]
+            ], 200);
         }
 
         $user = User::where('email', $fields['login'])
@@ -173,7 +189,7 @@ class AuthController extends Controller
     }
 
     public function logout(Request $request)
-    { 
+    {
         $user = $request->user();
         $user->tokens->each(function ($token) {
             $token->delete();
