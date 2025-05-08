@@ -7,6 +7,7 @@ use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PaystackController;
 use App\Models\Installment;
+use App\Http\Controllers\WithdrawController;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -30,12 +31,15 @@ Route::post('/manual-purchase-upload', [PurchaseController::class, 'uploadProof'
 // PAYMENT ROUTES
 Route::get('/manual-deposit-info', [PurchaseController::class, 'manualInfo'])->middleware('auth:sanctum');
 Route::post('/manual-deposit-upload', [PurchaseController::class, 'uploadProof'])->middleware('auth:sanctum');
-Route::post('/initiate-registration-payment', [AuthController::class, 'initiatePaystackPayment'])->middleware('auth:sanctum');
+Route::post('/initiate-registration-payment', [AuthController::class, 'initiatePaystackPayment']);
 Route::post('/paystack/callback', [PaystackController::class, 'verify'])->middleware('auth:sanctum');
 Route::post('/purchase', [PurchaseController::class, 'handlePurchase'])->middleware('auth:sanctum');
 Route::post('/confirm-payment', [PaystackController::class, 'confirmPayment'])->middleware('auth:sanctum');
 Route::post('/installment', [InstallmentController::class, 'handleInstallment'])->middleware('auth:sanctum');
 Route::post('/confirm-installment', [PaystackController::class, 'installmentPayment'])->middleware('auth:sanctum');
+Route::post('/withdraw', [WithdrawController::class, 'initiateWithdrawal'])->middleware('auth:sanctum');
+Route::post('/withdraw/confirm', [WithdrawController::class, 'confirmWithdrawal'])->middleware('auth:sanctum');
+
 
 // ALL ADMIN ROUTES
 Route::middleware('auth:sanctum')->group(function () {

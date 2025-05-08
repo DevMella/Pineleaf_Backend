@@ -20,6 +20,7 @@ class Transaction extends Model
     {
         return $this->hasOne(Payment::class);
         return $this->hasOne(Installment::class);
+        return $this->hasOne(Withdraw::class);
     }
     
 }

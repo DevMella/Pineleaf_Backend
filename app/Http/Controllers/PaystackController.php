@@ -166,7 +166,7 @@ class PaystackController extends Controller
     public function installmentPayment(Request $request)
 {
     $request->validate([
-        'ref_no' => 'required|string'
+        'ref_no' => 'required|string',
     ]);
 
     $transaction = Transaction::where('ref_no', $request->ref_no)->first();
@@ -179,20 +179,28 @@ class PaystackController extends Controller
         return response()->json(['message' => 'Transaction already confirmed.'], 400);
     }
 
-    $transaction->status = 'successful';
-    $transaction->save();
-
     $installment = Installment::where('transaction_id', $transaction->id)->first();
-    if ($installment) {
+    if (!$installment) {
+        return response()->json(['message' => 'Installment record not found.'], 404);
+    }
+
+    $installment->paid_count++;
+
+    if ($installment->paid_count == 1) {
         $startDate = now(); 
         $endDate = $startDate->copy()->addMonth(); 
 
-        $installment->update([
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'paid_count' => 1, 
-        ]);
+        $installment->start_date = $startDate;
+        $installment->end_date = $endDate;
+    } else {
+        $startDate = $installment->start_date;
+        $endDate = $installment->end_date;
     }
+
+    $installment->save();
+
+    $transaction->status = 'successful';
+    $transaction->save();
 
     Payment::create([
         'user_id' => $transaction->user_id,
@@ -205,12 +213,10 @@ class PaystackController extends Controller
 
     $user = User::find($transaction->user_id);
     $amount = $transaction->amount;
-
-    $user->balance += $amount * 0.10;
+    $user->balance += $amount * 0.10; 
     $user->save();
 
     $referrals = Referral::where('referee_id', $user->id)->get();
-
     foreach ($referrals as $referral) {
         if ($referral->level == 1) {
             $bonus = $amount * 0.04;
@@ -219,11 +225,9 @@ class PaystackController extends Controller
         } else {
             continue;
         }
-
         $referral->bonus += $bonus;
         $referral->save();
     }
-
     $referralBonuses = DB::table('referrals')
         ->select('referral_id', DB::raw('SUM(bonus) as total_bonus'))
         ->groupBy('referral_id')
@@ -237,7 +241,8 @@ class PaystackController extends Controller
 
     return response()->json([
         'message' => 'Installment payment confirmed and commissions awarded successfully.',
-        'transaction' => $transaction
+        'transaction' => $transaction,
     ]);
 }
+
 }
