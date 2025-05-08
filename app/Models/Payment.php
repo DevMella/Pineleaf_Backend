@@ -11,5 +11,6 @@ class Payment extends Model
     public function user()
     {
         return $this->belongsTo(Transaction::class);
+        return $this->belongsTo(Installment::class);
     }
 }

@@ -29,6 +29,7 @@ class PurchaseController extends Controller
             'payment_method' => 'required|in:manual,paystack',
             'amount' => 'required|numeric|min:1',
             'units' => 'required|numeric|min:1',
+            'property_purchased_id' => 'required|exists:properties,id',
             'payment_proof' => 'required_if:payment_method,manual|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
@@ -43,6 +44,7 @@ class PurchaseController extends Controller
                 'transaction_type' => 'purchase',
                 'ref_no' => $ref_no,
                 'units' => $request->units,
+                'property_purchased_id' => $request->property_purchased_id,
                 'proof_of_payment' => $proofPath,
                 'status' => 'pending',
             ]);
@@ -72,6 +74,7 @@ class PurchaseController extends Controller
                 'transaction_type' => 'purchase',
                 'ref_no' => $responseData['reference'],
                 'units' => $request->units,
+                'property_purchased_id' => $request->property_purchased_id,
                 'status' => 'pending',
             ]);
 

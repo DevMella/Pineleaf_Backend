@@ -8,6 +8,9 @@ use App\Models\User;
 use App\Models\Transaction;
 use App\Models\Payment;
 use App\Models\Referral;
+use App\Models\Installment;
+use Illuminate\Support\Facades\DB;
+
 
 class PaystackController extends Controller
 {
@@ -123,10 +126,118 @@ class PaystackController extends Controller
             'transaction_id' => $transaction->id,
         ]);
 
+        $user = User::find($transaction->user_id);
+        $amount = $transaction->amount;
+
+        $user->balance += $amount * 0.10;
+        $user->save();
+
+        $referrals = Referral::where('referee_id', $user->id)->get();
+
+        foreach ($referrals as $referral) {
+            if ($referral->level == 1) {
+                $bonus = $amount * 0.04;
+            } elseif ($referral->level == 2) {
+                $bonus = $amount * 0.02;
+            } else {
+                continue;
+            }
+
+            $referral->bonus += $bonus;
+            $referral->save();
+        }
+        $referralBonuses = DB::table('referrals')
+            ->select('referral_id', DB::raw('SUM(bonus) as total_bonus'))
+            ->groupBy('referral_id')
+            ->get();
+
+        foreach ($referralBonuses as $bonusData) {
+            DB::table('users')
+                ->where('id', $bonusData->referral_id)
+                ->update(['referral_bonus' => $bonusData->total_bonus]);
+        }
+
         return response()->json([
-            'message' => 'Payment confirmed successfully',
+            'message' => 'Payment confirmed and commissions awarded successfully',
             'transaction' => $transaction
         ]);
     }
 
+    public function installmentPayment(Request $request)
+{
+    $request->validate([
+        'ref_no' => 'required|string'
+    ]);
+
+    $transaction = Transaction::where('ref_no', $request->ref_no)->first();
+
+    if (!$transaction) {
+        return response()->json(['message' => 'Transaction not found'], 404);
+    }
+
+    if ($transaction->status !== 'pending') {
+        return response()->json(['message' => 'Transaction already confirmed.'], 400);
+    }
+
+    $transaction->status = 'successful';
+    $transaction->save();
+
+    $installment = Installment::where('transaction_id', $transaction->id)->first();
+    if ($installment) {
+        $startDate = now(); 
+        $endDate = $startDate->copy()->addMonth(); 
+
+        $installment->update([
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'paid_count' => 1, 
+        ]);
+    }
+
+    Payment::create([
+        'user_id' => $transaction->user_id,
+        'transaction_id' => $transaction->id,
+        'amount' => $transaction->amount,
+        'ref_no' => $transaction->ref_no,
+        'payment_date' => now(),
+        'status' => 'confirmed',
+    ]);
+
+    $user = User::find($transaction->user_id);
+    $amount = $transaction->amount;
+
+    $user->balance += $amount * 0.10;
+    $user->save();
+
+    $referrals = Referral::where('referee_id', $user->id)->get();
+
+    foreach ($referrals as $referral) {
+        if ($referral->level == 1) {
+            $bonus = $amount * 0.04;
+        } elseif ($referral->level == 2) {
+            $bonus = $amount * 0.02;
+        } else {
+            continue;
+        }
+
+        $referral->bonus += $bonus;
+        $referral->save();
+    }
+
+    $referralBonuses = DB::table('referrals')
+        ->select('referral_id', DB::raw('SUM(bonus) as total_bonus'))
+        ->groupBy('referral_id')
+        ->get();
+
+    foreach ($referralBonuses as $bonusData) {
+        DB::table('users')
+            ->where('id', $bonusData->referral_id)
+            ->update(['referral_bonus' => $bonusData->total_bonus]);
+    }
+
+    return response()->json([
+        'message' => 'Installment payment confirmed and commissions awarded successfully.',
+        'transaction' => $transaction
+    ]);
+}
 }
