@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('referrals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('referre_id'); // The new user
+            $table->unsignedBigInteger('referee_id'); // The new user
             $table->unsignedBigInteger('referral_id'); // The one who referred
             $table->unsignedBigInteger('transaction_id')->nullable();
             $table->integer('level')->default(1);
             $table->decimal('bonus', 10, 2)->default(0.00);
             $table->timestamps();
-    
+
             // Foreign key constraints (optional but good practice)
-            $table->foreign('referre_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('referee_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('referral_id')->references('id')->on('users')->onDelete('cascade');
         });
     }

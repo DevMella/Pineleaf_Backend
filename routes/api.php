@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminActions;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
@@ -36,6 +37,7 @@ Route::get('/manual-deposit-info', [PurchaseController::class, 'manualInfo'])->m
 Route::post('/manual-deposit-upload', [PurchaseController::class, 'uploadProof'])->middleware('auth:sanctum');
 Route::post('/paystack/callback', [PaystackController::class, 'verify']);
 Route::post('/manual/verify', [ManualController::class, 'manualVerify']);
+Route::post('/initiate-registration-payment', [AuthController::class, 'initiatePaystackPayment']);
 Route::post('/purchase', [PurchaseController::class, 'handlePurchase'])->middleware('auth:sanctum');
 Route::post('/confirm-payment', [PaystackController::class, 'confirmPayment'])->middleware('auth:sanctum');
 Route::post('/manual-confirm-payment', [ManualController::class, 'confirmManualPayment']);
@@ -64,3 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
 });
+
+Route::get('/admin/transactions', [AdminActions::class, 'transactions'])->middleware('auth:sanctum');
+Route::get('/admin/purchase', [AdminActions::class, 'purchase'])->middleware('auth:sanctum');
+Route::get('/admin/referrals', [AdminActions::class, 'Referral'])->middleware('auth:sanctum');

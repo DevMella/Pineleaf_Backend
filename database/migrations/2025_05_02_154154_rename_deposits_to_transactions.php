@@ -11,19 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transactions', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->decimal('amount', 12, 2);
-            $table->string('transaction_type')->default('deposit');
-            $table->string('ref_no')->unique();
-            $table->unsignedBigInteger('property_purchased_id')->nullable();
-            $table->string('proof_of_payment');
-            $table->string('status')->default('pending');
-            $table->timestamps();
+        // Schema::create('transactions', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->unsignedBigInteger('user_id');
+        //     $table->decimal('amount', 12, 2);
+        //     $table->string('transaction_type')->default('deposit');
+        //     $table->string('ref_no')->unique();
+        //     $table->unsignedBigInteger('property_purchased_id')->nullable();
+        //     $table->string('proof_of_payment');
+        //     $table->string('status')->default('pending');
+        //     $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        });
+        //     $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        // });
     }
 
     /**
