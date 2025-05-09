@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use App\Models\ActivityLog;
 
 class WithdrawController extends Controller
 {
@@ -71,7 +72,7 @@ class WithdrawController extends Controller
         'account_number' => $request->account_number,
         'status' => 'pending',
     ]);
-
+    logActivity('Withdrawal', 'User successfully place a withdraw');
     return response()->json([
         'message' => 'Withdrawal request initiated. Awaiting confirmation.',
         'reference' => $refNo,
@@ -145,11 +146,27 @@ class WithdrawController extends Controller
             $withdraw->status = 'confirmed';
             $withdraw->save();
         });
-
+        logActivity('Withdrawal_verification', 'User withdrawal successfully confirmed and disbursed');
         return response()->json([
             'message' => 'Withdrawal confirmed and processed.',
             'transaction' => $transaction,
             'withdraw' => $withdraw
+        ]);
+    }
+
+    public function getUserActivityLogs($userId)
+    {
+        $logs = ActivityLog::where('user_id', $userId)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+    
+        if ($logs->isEmpty()) {
+            return response()->json(['message' => 'No activity logs found for this user'], 404);
+        }
+    
+        return response()->json([
+            'user_id' => $userId,
+            'logs' => $logs,
         ]);
     }
 }

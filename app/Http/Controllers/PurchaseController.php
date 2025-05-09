@@ -77,7 +77,7 @@ class PurchaseController extends Controller
                 'property_purchased_id' => $request->property_purchased_id,
                 'status' => 'pending',
             ]);
-
+            logActivity('land_purchase', 'User successfully purchased a land and still on pending');
             return response()->json([
                 'message' => 'Paystack payment initialized successfully.',
                 'payment_url' => $responseData['authorization_url'],

@@ -104,7 +104,7 @@ class AuthController extends Controller
             }
 
             $paymentData = $paystackResponse->json()['data'];
-
+            logActivity('registration', 'User registered in successfully');
             return response()->json([
                 'status' => 'pending_payment',
                 'message' => 'Please complete the payment via Paystack.',
@@ -181,7 +181,7 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken($user->fullName);
-
+        logActivity('login', 'User logged in successfully');
         return [
             'user' => $user,
             'token' => $token->plainTextToken
@@ -194,7 +194,7 @@ class AuthController extends Controller
         $user->tokens->each(function ($token) {
             $token->delete();
         });
-
+        logActivity('logout', 'User logged out successfully');
         return response([
             'message' => 'Successfully logged out.'
         ], 200);

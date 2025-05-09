@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Payment;
-use App\Models\Property;
-use App\Models\Referral;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -100,5 +99,20 @@ class UserController extends Controller
         $query->orderBy(in_array($sortBy, $columns) ? $sortBy : (in_array('created_at', $columns) ? 'created_at' : 'id'), 'desc');
 
         return response()->json($query->paginate($perPage));
+    }
+    public function getUserNotification($userId)
+    {
+        $logs = Transaction::where('user_id', $userId)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+    
+        if ($logs->isEmpty()) {
+            return response()->json(['message' => 'No notification found for this user'], 404);
+        }
+    
+        return response()->json([
+            'user_id' => $userId,
+            'logs' => $logs,
+        ]);
     }
 }

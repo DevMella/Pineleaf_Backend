@@ -11,82 +11,75 @@ use App\Models\Referral;
 use App\Models\Installment;
 use Illuminate\Support\Facades\DB;
 
-
-class PaystackController extends Controller
+class ManualController extends Controller
 {
-    public function verify(Request $request)
+    public function manualVerify(Request $request)
     {
-        $reference = $request->reference;
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
     
-        $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
-            ->get("https://api.paystack.co/transaction/verify/{$reference}");
+        $user = User::find($request->user_id);
     
-        if (!$response->successful()) {
-            return response()->json(['message' => 'Unable to verify transaction.'], 500);
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
         }
     
-        $data = $response->json()['data'];
+        if ($user->enabled) {
+            return response()->json(['message' => 'User already activated.'], 400);
+        }
     
-        if ($data['status'] === 'success') {
-            $email = $data['customer']['email'];
-            $amount = $data['amount'] / 100;
-            $ref_no = $data['reference'];
+        $transaction = Transaction::where('user_id', $user->id)
+            ->where('transaction_type', 'registration')
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
     
-            $user = User::where('email', $email)->first();
+        if (!$transaction) {
+            return response()->json(['message' => 'No pending transaction found for this user.'], 404);
+        }
     
-            if (!$user) {
+        $user->enabled = true;
+        $user->save();
     
-                return response()->json(['message' => 'User not found.'], 404);
-            }
+        $transaction->status = 'success';
+        $transaction->save();
     
-            if ($user->enabled) {
-                return response()->json(['message' => 'User already activated.'], 400);
-            }
-            $user->enabled = true;
-            $user->save();
-            $transaction = Transaction::create([
+        Payment::updateOrCreate(
+            ['transaction_id' => $transaction->id],
+            [
                 'user_id' => $user->id,
-                'amount' => $amount,
-                'transaction_type' => 'registration',
-                'ref_no' => $ref_no,
-                'status' => 'success',
-                'proof_of_payment' => $ref_no,
-            ]);
-    
-            Payment::create([
-                'user_id' => $user->id,
-                'ref_no' => $ref_no,
+                'ref_no' => $transaction->ref_no,
                 'transaction_id' => $transaction->id,
-            ]);
+            ]
+        );
     
-            if ($user->referral_code) {
-                $referrer = User::where('my_referral_code', $user->referral_code)->first();
-                $level = 1;
+        if ($user->referral_code) {
+            $referrer = User::where('my_referral_code', $user->referral_code)->first();
+            $level = 1;
     
-                $currentReferrer = $referrer;
-                while ($currentReferrer && $level <= 2) {
-                    Referral::firstOrCreate([
-                        'referral_id' => $currentReferrer->id,
-                        'referee_id' => $user->id,
-                        'level' => $level,
-                    ]);
+            $currentReferrer = $referrer;
+            while ($currentReferrer && $level <= 2) {
+                Referral::firstOrCreate([
+                    'referral_id' => $currentReferrer->id,
+                    'referee_id' => $user->id,
+                    'level' => $level,
+                ]);
     
-                    $currentReferrer = User::where('my_referral_code', $currentReferrer->referral_code)->first();
-                    $level++;
-                }
+                $currentReferrer = User::where('my_referral_code', $currentReferrer->referral_code)->first();
+                $level++;
             }
-            logActivity('registration_verification', 'User registration payment is verified successfully');
-            return response()->json([
-                'message' => 'User activated and payment confirmed.',
-                'user' => $user,
-                'transaction' => $transaction
-            ], 200);
         }
     
-        return response()->json(['message' => 'Payment not successful.'], 400);
+        logActivity('manual_verification', 'User manually verified and activated by admin');
+    
+        return response()->json([
+            'message' => 'User manually verified and activated successfully.',
+            'user' => $user,
+            'transaction' => $transaction,
+        ], 200);
     }
-
-    public function confirmPayment(Request $request)
+    public function confirmManualPayment(Request $request)
     {
         $request->validate([
             'ref_no' => 'required|string'
@@ -100,21 +93,6 @@ class PaystackController extends Controller
 
         if ($transaction->status === 'successful') {
             return response()->json(['message' => 'Payment already confirmed.']);
-        }
-
-        if (str_contains($transaction->ref_no, 'PAYSTACK')) {
-            $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))->get(
-                "https://api.paystack.co/transaction/verify/{$transaction->ref_no}"
-            );
-
-            if (!$response->successful()) {
-                return response()->json(['message' => 'Failed to verify Paystack payment'], 500);
-            }
-
-            $paystackData = $response->json()['data'];
-            if ($paystackData['status'] !== 'success') {
-                return response()->json(['message' => 'Payment not completed yet'], 400);
-            }
         }
 
         $transaction->status = 'successful';
@@ -146,6 +124,7 @@ class PaystackController extends Controller
             $referral->bonus += $bonus;
             $referral->save();
         }
+
         $referralBonuses = DB::table('referrals')
             ->select('referral_id', DB::raw('SUM(bonus) as total_bonus'))
             ->groupBy('referral_id')
@@ -156,52 +135,49 @@ class PaystackController extends Controller
                 ->where('id', $bonusData->referral_id)
                 ->update(['referral_bonus' => $bonusData->total_bonus]);
         }
-        logActivity('land_verification', 'User land purchase payment is verified successfully');
+
+        logActivity('manual_verification', 'Manual payment verified successfully');
+
         return response()->json([
-            'message' => 'Payment confirmed and commissions awarded successfully',
+            'message' => 'Manual payment confirmed and commissions awarded successfully',
             'transaction' => $transaction
         ]);
     }
-
-    public function installmentPayment(Request $request)
-    {
+    public function confirmInstallmentPayment(Request $request){
         $request->validate([
             'ref_no' => 'required|string',
         ]);
-
+    
         $transaction = Transaction::where('ref_no', $request->ref_no)->first();
-
+    
         if (!$transaction) {
             return response()->json(['message' => 'Transaction not found'], 404);
         }
-
+    
         if ($transaction->status !== 'pending') {
             return response()->json(['message' => 'Transaction already confirmed.'], 400);
         }
-
+    
         $installment = Installment::where('transaction_id', $transaction->id)->first();
         if (!$installment) {
             return response()->json(['message' => 'Installment record not found.'], 404);
         }
-
+    
         $installment->paid_count++;
-
+    
         if ($installment->paid_count == 1) {
-            $startDate = now(); 
-            $endDate = $startDate->copy()->addMonth(); 
-
+            $startDate = now();
+            $endDate = $startDate->copy()->addMonth();
+    
             $installment->start_date = $startDate;
             $installment->end_date = $endDate;
-        } else {
-            $startDate = $installment->start_date;
-            $endDate = $installment->end_date;
         }
-
+    
         $installment->save();
-
+    
         $transaction->status = 'successful';
         $transaction->save();
-
+    
         Payment::create([
             'user_id' => $transaction->user_id,
             'transaction_id' => $transaction->id,
@@ -210,12 +186,12 @@ class PaystackController extends Controller
             'payment_date' => now(),
             'status' => 'confirmed',
         ]);
-
+    
         $user = User::find($transaction->user_id);
         $amount = $transaction->amount;
-        $user->balance += $amount * 0.10; 
+        $user->balance += $amount * 0.10;
         $user->save();
-
+    
         $referrals = Referral::where('referee_id', $user->id)->get();
         foreach ($referrals as $referral) {
             if ($referral->level == 1) {
@@ -225,24 +201,27 @@ class PaystackController extends Controller
             } else {
                 continue;
             }
+    
             $referral->bonus += $bonus;
             $referral->save();
         }
+    
         $referralBonuses = DB::table('referrals')
             ->select('referral_id', DB::raw('SUM(bonus) as total_bonus'))
             ->groupBy('referral_id')
             ->get();
-
+    
         foreach ($referralBonuses as $bonusData) {
             DB::table('users')
                 ->where('id', $bonusData->referral_id)
                 ->update(['referral_bonus' => $bonusData->total_bonus]);
         }
-        logActivity('installment_verification', 'User installment payment is verified successfully');
+    
+        logActivity('manual_installment_verification', 'Manual installment payment verified successfully.');
+    
         return response()->json([
             'message' => 'Installment payment confirmed and commissions awarded successfully.',
             'transaction' => $transaction,
         ]);
     }
-
 }

@@ -52,7 +52,7 @@ class InstallmentController extends Controller
                 'installment_count' => $request->installment_count,
                 'paid_count' => 0,
             ]);
-    
+            logActivity('installment_payment', 'User purchased a land with installement payment');
             return response()->json([
                 'message' => 'Manual payment submitted successfully. Pending verification.',
                 'transaction' => $transaction,
