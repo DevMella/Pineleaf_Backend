@@ -18,6 +18,8 @@ Route::get('/', function () {
     return view('documentation');
 })->name('home');
 
+Route::put('/properties/{id}', [PropertyController::class, 'update'])->middleware('auth:sanctum');;
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -62,7 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/properties/create', [PropertyController::class, 'create']);
     Route::get('/properties', [PropertyController::class, 'index']);
     Route::get('/latest-properties', [PropertyController::class, 'latest']);
-    Route::put('/properties/{id}', [PropertyController::class, 'update']);
+    // Route::put('/properties/{id}', [PropertyController::class, 'update']);
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
 });
