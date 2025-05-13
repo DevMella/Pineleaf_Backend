@@ -8,9 +8,8 @@ use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PaystackController;
-use App\Models\Installment;
+use App\Http\Controllers\subscribersController;
 use App\Http\Controllers\WithdrawController;
-use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,11 +63,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/properties/create', [PropertyController::class, 'create']);
     Route::get('/properties', [PropertyController::class, 'index']);
     Route::get('/latest-properties', [PropertyController::class, 'latest']);
-    // Route::put('/properties/{id}', [PropertyController::class, 'update']);
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
+    Route::put('/properties/{id}', [PropertyController::class, 'update']);
 });
 
 Route::get('/admin/transactions', [AdminActions::class, 'transactions'])->middleware('auth:sanctum');
 Route::get('/admin/purchase', [AdminActions::class, 'purchase'])->middleware('auth:sanctum');
 Route::get('/admin/referrals', [AdminActions::class, 'Referral'])->middleware('auth:sanctum');
+
+// SUBSCRIBERS ROUTES
+Route::post('/subscribers', [subscribersController::class, 'store']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/subscribers', [subscribersController::class, 'index']);
+    Route::get('/subscribers/{id}', [subscribersController::class, 'show']);
+    Route::delete('/subscribers/{id}', [subscribersController::class, 'destroy']);
+});
