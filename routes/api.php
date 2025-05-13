@@ -9,6 +9,7 @@ use App\Http\Controllers\ManualController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PaystackController;
 use App\Http\Controllers\subscribersController;
+use App\Http\Controllers\TestimonialsController;
 use App\Http\Controllers\WithdrawController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -80,3 +81,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/subscribers/{id}', [subscribersController::class, 'show']);
     Route::delete('/subscribers/{id}', [subscribersController::class, 'destroy']);
 });
+
+// TESTIMONIALS ROUTES
+Route::post('/testimonials', [TestimonialsController::class, 'store']);
+
+// Route::get('/testimonials', [TestimonialsController::class, 'index']);
+Route::get('/testimonials/{id}', [TestimonialsController::class, 'show']);
+Route::delete('/testimonials/{id}', [TestimonialsController::class, 'destroy']);
+// Route::middleware('auth:sanctum')->group(function () {
+// });
