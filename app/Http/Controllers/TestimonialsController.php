@@ -6,6 +6,7 @@ use App\Models\testimonials;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class TestimonialsController extends Controller
@@ -15,6 +16,11 @@ class TestimonialsController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         try {
             $fields = $request->validate([
                 'name' => 'required|string|max:255',
@@ -62,78 +68,85 @@ class TestimonialsController extends Controller
     // /**
     //  * Display a listing of the resource.
     //  */
-    // public function index(Request $request)
-    // {
-    //     $user = $request->user();
-    //     if (!$user || $user->role !== 'admin') {
-    //         return response()->json(['message' => 'Unauthorized'], 403);
-    //     }
+    public function index(Request $request)
+    {
+        try {
+            $query = testimonials::query();
+            $columns = Schema::getColumnListing('testimonials');
 
-    //     try {
-    //         $query = testimonials::query();
+            // Text search
+            if ($search = $request->has('search')) {
+                $query->where(function ($q) use ($search, $columns) {
+                    foreach (['email', 'fullName'] as $field) {
+                        if (in_array($field, $columns)) {
+                            $q->orWhere($field, 'like', "%{$search}%");
+                        }
+                    }
+                });
+            }
+            // Filter by "position"
+            if ($request->has('position')) {
+                $query->where('position', 'like', '%' . $request->input('position') . '%');
+            }
+            // Filter by "company"
+            if ($request->has('company')) {
+                $query->where('company', 'like', '%' . $request->input('company') . '%');
+            }
 
-    //         if ($request->filled('email')) {
-    //             $query->where('email', 'LIKE', '%' . $request->input('email') . '%');
-    //         }
+            // Filter by date (created_at)
+            if ($request->has('from_date')) {
+                $query->whereDate('created_at', '>=', $request->input('from_date'));
+            }
+            if ($request->has('to_date')) {
+                $query->whereDate('created_at', '<=', $request->input('to_date'));
+            }
 
-    //         // Filter by date (created_at)
-    //         if ($request->has('from_date')) {
-    //             $query->whereDate('created_at', '>=', $request->input('from_date'));
-    //         }
-    //         if ($request->has('to_date')) {
-    //             $query->whereDate('created_at', '<=', $request->input('to_date'));
-    //         }
+            // Sorting and pagination
+            $perPage = (int) $request->get('per_page', 10);
+            $sortField = $request->get('sort_by', 'created_at');
+            $sortDirection = strtolower($request->get('sort_direction', 'desc'));
 
-    //         // Sorting and pagination
-    //         $perPage = (int) $request->get('per_page', 10);
-    //         $sortField = $request->get('sort_by', 'created_at');
-    //         $sortDirection = strtolower($request->get('sort_direction', 'desc'));
+            // Validate sort direction
+            if (!in_array($sortDirection, ['asc', 'desc'])) {
+                $sortDirection = 'desc';
+            }
 
-    //         // Validate sort direction
-    //         if (!in_array($sortDirection, ['asc', 'desc'])) {
-    //             $sortDirection = 'desc';
-    //         }
+            $query->orderBy($sortField, $sortDirection);
 
-    //         $query->orderBy($sortField, $sortDirection);
+            // Paginate results
+            $testimonials = $query->paginate($perPage);
 
-    //         // Paginate results
-    //         $testimonials = $query->paginate($perPage);
+            if ($testimonials->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No testimonials found',
+                    'data' => [],
+                ], 404);
+            }
 
-    //         if ($testimonials->isEmpty()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'No testimonials found',
-    //                 'data' => [],
-    //             ], 404);
-    //         }
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'testimonials retrieved successfully',
-    //             'data' => $testimonials,
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         Log::error('testimonials search error', [
-    //             'message' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString(),
-    //         ]);
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Failed to search testimonials',
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
+            return response()->json([
+                'success' => true,
+                'message' => 'testimonials retrieved successfully',
+                'data' => $testimonials,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('testimonials search error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to search testimonials',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, $id)
+    public function show($id)
     {
-        // $user = $request->user();
-        // if (!$user || $user->role !== 'admin') {
-        //     return response()->json(['message' => 'Unauthorized'], 403);
-        // }
         $testimonials = testimonials::find($id);
 
         if (!$testimonials) {
@@ -155,10 +168,10 @@ class TestimonialsController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        // $user = $request->user();
-        // if (!$user || $user->role !== 'admin') {
-        //     return response()->json(['message' => 'Unauthorized'], 403);
-        // }
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $testimonials = testimonials::find($id);
 
