@@ -74,7 +74,7 @@ class UserController extends Controller
      */
     public function search(Request $request)
     {
-        if (!$request->user()?->role === 'admin') {
+        if ($request->user()?->role !== 'admin') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -82,6 +82,7 @@ class UserController extends Controller
         $columns = Schema::getColumnListing('users');
         $query = User::where('role', '!=', 'admin');
 
+        // Text search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search, $columns) {
                 foreach (['email', 'fullName', 'my_referral_code'] as $field) {
@@ -89,14 +90,26 @@ class UserController extends Controller
                         $q->orWhere($field, 'like', "%{$search}%");
                     }
                 }
-                if (in_array('number', $columns) && is_numeric($search)) {
-                    $q->orWhere('number', $search);
-                }
             });
         }
 
-        $sortBy = $request->input('sort_by', 'created_at');
-        $query->orderBy(in_array($sortBy, $columns) ? $sortBy : (in_array('created_at', $columns) ? 'created_at' : 'id'), 'desc');
+        // Filter by enabled (0 or 1)
+        if ($request->has('enabled') && in_array($request->enabled, ['0', '1'], true)) {
+            $query->where('enabled', (int) $request->enabled);
+        }
+
+        // Filter by date (created_at)
+        if ($request->has('from_date')) {
+            $query->whereDate('created_at', '>=', $request->input('from_date'));
+        }
+        if ($request->has('to_date')) {
+            $query->whereDate('created_at', '<=', $request->input('to_date'));
+        }
+
+        $query->orderBy(
+            'created_at',
+            'desc'
+        );
 
         return response()->json($query->paginate($perPage));
     }

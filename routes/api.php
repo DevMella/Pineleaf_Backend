@@ -1,22 +1,28 @@
 <?php
 
+use App\Http\Controllers\AdminActions;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InstallmentController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\PaystackWebhookController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PaystackController;
-use App\Models\Installment;
+use App\Http\Controllers\subscribersController;
+use App\Http\Controllers\TestimonialsController;
 use App\Http\Controllers\WithdrawController;
-use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\GalleryController;
 
 Route::get('/', function () {
     return view('documentation');
 })->name('home');
+
+Route::put('/properties/{id}', [PropertyController::class, 'update'])->middleware('auth:sanctum');;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -37,6 +43,7 @@ Route::get('/manual-deposit-info', [PurchaseController::class, 'manualInfo'])->m
 Route::post('/manual-deposit-upload', [PurchaseController::class, 'uploadProof'])->middleware('auth:sanctum');
 Route::post('/paystack/callback', [PaystackController::class, 'verify']);
 Route::post('/manual/verify', [ManualController::class, 'manualVerify']);
+Route::post('/initiate-registration-payment', [AuthController::class, 'initiatePaystackPayment']);
 Route::post('/purchase', [PurchaseController::class, 'handlePurchase'])->middleware('auth:sanctum');
 Route::post('/confirm-payment', [PaystackController::class, 'confirmPayment'])->middleware('auth:sanctum');
 Route::post('/manual-confirm-payment', [ManualController::class, 'confirmManualPayment']);
@@ -57,12 +64,64 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // PROPERTIES ROUTES
 Route::get('/properties/search', [PropertyController::class, 'search']);
+Route::put('/properties/{id}', [PropertyController::class, 'update']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/properties/create', [PropertyController::class, 'create']);
     Route::get('/properties', [PropertyController::class, 'index']);
     Route::get('/latest-properties', [PropertyController::class, 'latest']);
-    Route::put('/properties/{id}', [PropertyController::class, 'update']);
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
+    // Route::put('/properties/{id}', [PropertyController::class, 'update']);
 });
+
+Route::get('/admin/transactions', [AdminActions::class, 'transactions'])->middleware('auth:sanctum');
+Route::get('/admin/purchase', [AdminActions::class, 'purchase'])->middleware('auth:sanctum');
+Route::get('/admin/referrals', [AdminActions::class, 'Referral'])->middleware('auth:sanctum');
+
+// SUBSCRIBERS ROUTES
+Route::post('/subscribers', [subscribersController::class, 'store']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/subscribers', [subscribersController::class, 'index']);
+    Route::get('/subscribers/{id}', [subscribersController::class, 'show']);
+    Route::delete('/subscribers/{id}', [subscribersController::class, 'destroy']);
+});
+
+// TESTIMONIALS ROUTES
+Route::get('/testimonials/{id}', [TestimonialsController::class, 'show']);
+Route::get('/testimonials', [TestimonialsController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::delete('/testimonials/{id}', [TestimonialsController::class, 'destroy']);
+    Route::post('/testimonials', [TestimonialsController::class, 'store']);
+});
+
+// LOCATION ROUTES
+Route::get('/locations/{id}', [LocationController::class, 'show']);
+Route::get('/locations', [LocationController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::delete('/locations/{id}', [LocationController::class, 'destroy']);
+    Route::post('/locations', [LocationController::class, 'store']);
+});
+
+
+// CONTACT ROUTES
+Route::post('/contacts', [ContactController::class, 'create']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/contacts', [ContactController::class, 'index']);
+    Route::get('/contacts/{id}', [ContactController::class, 'show']);
+    Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+    Route::get('/contact/search', [ContactController::class, 'search']);
+});
+
+
+// GALLERY ROUTES
+Route::get('/gallery', [GalleryController::class, 'index']);
+Route::get('/gallery/type', [GalleryController::class, 'types']);
+Route::get('/gallery/{id}', [GalleryController::class, 'show']);
+Route::get('/gallery', [GalleryController::class, 'search']);
+Route::post('/gallery', [GalleryController::class, 'store']);
+Route::delete('/gallery/{id}', [GalleryController::class, 'destroy']);
+// Route::middleware('auth:sanctum')->group(function () {
+// });

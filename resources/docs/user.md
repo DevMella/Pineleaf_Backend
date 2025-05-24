@@ -22,13 +22,46 @@ Allows admin users to search for non-admin users by specific fields, with suppor
 
 ## 📥 Query Parameters
 
-| Parameter  | Type     | Description                                                                                                                   |
-| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `search`   | `string` | Search term that will be matched against `email`, `fullName`, or `my_referral_code`. If numeric, it will also match `number`. |
-| `per_page` | `int`    | Number of records per page (default: 50, minimum: 1)                                                                          |
-| `sort_by`  | `string` | Column to sort by (default: `created_at` if it exists, otherwise `id`)                                                        |
+Here is a clean and complete documentation for the `search` method you provided, suitable for internal developer docs or API documentation:
 
 ---
+
+## 🔍 `search(Request $request)` – Admin User Search API
+
+Search and filter non-admin users based on various parameters like email, name, referral code, enabled status, and registration dates.
+
+### 📌 Endpoint
+
+```
+GET /api/users/search
+```
+
+### 🔐 Authorization
+
+* **Required Role**: `admin`
+* **Response on failure**:
+
+  ```json
+  {
+    "message": "Unauthorized"
+  }
+  ```
+
+  * **Status Code**: `403 Forbidden`
+
+---
+
+### 📥 Query Parameters
+
+| Parameter   | Type         | Description                                                                                |
+| ----------- | ------------ | ------------------------------------------------------------------------------------------ |
+| `search`    | `string`     | Performs a partial match search across `email`, `fullName`, and `my_referral_code` fields. |
+| `enabled`   | `0` or `1`   | Filters users by enabled status (`0` = disabled, `1` = enabled).                           |
+| `from_date` | `YYYY-MM-DD` | Filters users registered on or after this date (based on `created_at`).                    |
+| `to_date`   | `YYYY-MM-DD` | Filters users registered on or before this date.
+
+---
+
 
 ## ✅ Success Response
 
@@ -97,15 +130,11 @@ GET /api/users/search
 ```http
 GET /api/users/search?search=REF123
 ```
+`
 
-### 3. Paginate results
+### ⚠ Notes
 
-```http
-GET /api/users/search?page=2&per_page=25
-```
-
-### 4. Sort by fullName (if column exists)
-
-```http
-GET /api/users/search?sort_by=fullName
-```
+* Only non-admin users are returned.
+* Date filters must be valid `YYYY-MM-DD` format strings.
+* Search is case-insensitive and supports partial matches for selected fields.
+* You can combine multiple filters in a single request.
