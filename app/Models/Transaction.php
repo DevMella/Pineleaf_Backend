@@ -15,6 +15,7 @@ class Transaction extends Model
         'proof_of_payment',
         'units',
         'status',
+        'meta',
     ];
     public function payment()
     {

@@ -10,8 +10,6 @@ class ProfileController extends Controller
         $fields = $request->validate([
             'new_password' => 'required|confirmed',
         ]);
-        $user = $request->user();
-
-        
+        $user = $request->user();        
     }
 }

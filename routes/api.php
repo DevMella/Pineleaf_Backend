@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\ManualController;
+use App\Http\Controllers\PaystackWebhookController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PaystackController;
 use App\Models\Installment;
@@ -44,6 +45,7 @@ Route::post('/manual-confirm-installment', [ManualController::class, 'confirmIns
 Route::post('/confirm-installment', [PaystackController::class, 'installmentPayment'])->middleware('auth:sanctum');
 Route::post('/withdraw', [WithdrawController::class, 'initiateWithdrawal'])->middleware('auth:sanctum');
 Route::post('/withdraw/confirm', [WithdrawController::class, 'confirmWithdrawal'])->middleware('auth:sanctum');
+Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle']);
 
 
 // ALL ADMIN ROUTES

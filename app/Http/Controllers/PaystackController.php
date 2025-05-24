@@ -244,5 +244,6 @@ class PaystackController extends Controller
             'transaction' => $transaction,
         ]);
     }
+    
 
 }

@@ -104,7 +104,24 @@ class AuthController extends Controller
             }
 
             $paymentData = $paystackResponse->json()['data'];
-            logActivity('registration', 'User registered in successfully');
+
+            $transaction = Transaction::create([
+                'user_id' => $user->id,
+                'amount' => $request->amount,
+                'transaction_type' => 'registration',
+                'ref_no' => $paymentData['reference'], // save ref from paystack
+                'proof_of_payment' => $paymentData['reference'],
+                'status' => 'pending',
+            ]);
+
+            Payment::create([
+                'user_id' => $user->id,
+                'ref_no' => $paymentData['reference'],
+                'transaction_id' => $transaction->id,
+            ]);
+
+            logActivity('registration', 'User registered with Paystack pending payment.');
+
             return response()->json([
                 'status' => 'pending_payment',
                 'message' => 'Please complete the payment via Paystack.',
@@ -113,6 +130,7 @@ class AuthController extends Controller
                 'user_id' => $user->id,
             ]);
         }
+
     }
 
     public function login(Request $request)

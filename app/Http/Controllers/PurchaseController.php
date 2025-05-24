@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\Transaction;
-use App\Models\Payment;
+use App\Models\Property;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
@@ -35,31 +36,36 @@ class PurchaseController extends Controller
 
         $ref_no = uniqid();
 
-        if ($request->payment_method === 'manual') {
-            $proofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+        $property = Property::findOrFail($request->property_purchased_id);
 
-            $transaction = Transaction::create([
-                'user_id' => $request->user_id,
-                'amount' => $request->amount,
-                'transaction_type' => 'purchase',
-                'ref_no' => $ref_no,
-                'units' => $request->units,
-                'property_purchased_id' => $request->property_purchased_id,
-                'proof_of_payment' => $proofPath,
-                'status' => 'pending',
-            ]);
+        if ($request->payment_method === 'manual') {
+            $proofPath = $request->file('payment_proof')->store('payment_proofs', 'publc ic');
+
+            DB::transaction(function () use ($request, $ref_no, $proofPath, $property) {
+                Transaction::create([
+                    'user_id' => $request->user_id,
+                    'amount' => $request->amount,
+                    'transaction_type' => 'purchase',
+                    'ref_no' => $ref_no,
+                    'units' => $request->units,
+                    'property_purchased_id' => $request->property_purchased_id,
+                    'proof_of_payment' => $proofPath,
+                    'status' => 'pending',
+                ]);
+
+                $property->increment('unit_sold', $request->units);
+            });
 
             return response()->json([
                 'message' => 'Manual payment submitted successfully. Pending verification.',
-                'transaction' => $transaction,
+                'reference' => $ref_no,
             ], 201);
         } else {
             $paystackResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))
                 ->post('https://api.paystack.co/transaction/initialize', [
                     'email' => $request->email,
-                    'amount' => $request->amount * 100, 
+                    'amount' => $request->amount * 100,
                     'reference' => $ref_no,
-                    'callback_url' => url('/paystack/callback'), 
                 ]);
 
             if (!$paystackResponse->successful()) {
@@ -68,16 +74,20 @@ class PurchaseController extends Controller
 
             $responseData = $paystackResponse->json()['data'];
 
-            Transaction::create([
-                'user_id' => $request->user_id,
-                'amount' => $request->amount,
-                'transaction_type' => 'purchase',
-                'ref_no' => $responseData['reference'],
-                'units' => $request->units,
-                'property_purchased_id' => $request->property_purchased_id,
-                'status' => 'pending',
-            ]);
+            DB::transaction(function () use ($request, $responseData, $property) {
+                Transaction::create([
+                    'user_id' => $request->user_id,
+                    'amount' => $request->amount,
+                    'transaction_type' => 'purchase',
+                    'ref_no' => $responseData['reference'],
+                    'units' => $request->units,
+                    'property_purchased_id' => $request->property_purchased_id,
+                    'status' => 'pending',
+                ]);
+            });
+
             logActivity('land_purchase', 'User successfully purchased a land and still on pending');
+
             return response()->json([
                 'message' => 'Paystack payment initialized successfully.',
                 'payment_url' => $responseData['authorization_url'],
