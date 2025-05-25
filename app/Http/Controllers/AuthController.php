@@ -152,7 +152,7 @@ class AuthController extends Controller
                     'fullName' => env('ADMIN_NAME', 'Admin'),
                     'password' => bcrypt($adminPassword),
                     'role' => 'admin',
-                    'enabled' => true,
+                    'enabled' => 1,
                 ]);
             } else {
                 $admin->role = 'admin';

@@ -12,6 +12,11 @@ class GalleryController extends Controller
     // AUTHENTICATED: Upload images
     public function store(Request $request)
     {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         try {
             $request->validate([
                 'type' => 'required|string',
@@ -144,7 +149,15 @@ class GalleryController extends Controller
                 $query->where('type', 'LIKE', '%' . $request->input('type') . '%');
             }
 
-            $gallery = $query->paginate(50);
+            // Filter by date (created_at)
+            if ($request->has('from_date')) {
+                $query->whereDate('created_at', '>=', $request->input('from_date'));
+            }
+            if ($request->has('to_date')) {
+                $query->whereDate('created_at', '<=', $request->input('to_date'));
+            }
+
+            $gallery = $query->latest()->paginate(50);
 
             if ($gallery->isEmpty()) {
                 return response()->json([
@@ -173,8 +186,14 @@ class GalleryController extends Controller
     }
 
     // AUTHENTICATED: Delete
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+
         try {
             $gallery = Gallery::findOrFail($id);
 

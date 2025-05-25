@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminActions;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ManualController;
@@ -17,6 +18,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\InspectionController;
+use App\Http\Controllers\RealtorStarsController;
 
 Route::get('/', function () {
     return view('documentation');
@@ -98,11 +101,12 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // LOCATION ROUTES
-Route::get('/locations/{id}', [LocationController::class, 'show']);
 Route::get('/locations', [LocationController::class, 'index']);
+Route::get('/locations/{id}', [LocationController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
-    Route::delete('/locations/{id}', [LocationController::class, 'destroy']);
     Route::post('/locations', [LocationController::class, 'store']);
+    Route::put('/locations/{id}', [LocationController::class, 'update']);
+    Route::delete('/locations/{id}', [LocationController::class, 'destroy']);
 });
 
 
@@ -121,7 +125,34 @@ Route::get('/gallery', [GalleryController::class, 'index']);
 Route::get('/gallery/type', [GalleryController::class, 'types']);
 Route::get('/gallery/{id}', [GalleryController::class, 'show']);
 Route::get('/gallery', [GalleryController::class, 'search']);
-Route::post('/gallery', [GalleryController::class, 'store']);
-Route::delete('/gallery/{id}', [GalleryController::class, 'destroy']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/gallery', [GalleryController::class, 'store']);
+    Route::delete('/gallery/{id}', [GalleryController::class, 'destroy']);
+});
+
+
+// INSPECTION ROUTES
+Route::post('/inspections', [InspectionController::class, 'store']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/inspections', [InspectionController::class, 'index']);
+    Route::put('/inspections/{id}', [InspectionController::class, 'complete']);
+    Route::patch('/inspections/{id}', [InspectionController::class, 'cancelled']);
+    Route::delete('/inspections/{id}', [InspectionController::class, 'destroy']);
+    Route::get('/inspections/{id}', [InspectionController::class, 'show']);
+});
+
+// CONSULTATION ROUTES
+Route::post('/consultations', [ConsultationController::class, 'store']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/consultations', [ConsultationController::class, 'index']);
+    Route::put('/consultations/{id}', [ConsultationController::class, 'complete']);
+    Route::patch('/consultations/{id}', [ConsultationController::class, 'cancelled']);
+    Route::delete('/consultations/{id}', [ConsultationController::class, 'destroy']);
+    Route::get('/consultations/{id}', [ConsultationController::class, 'show']);
+});
+
+// REALTOR STARS ROUTES
+Route::get('/realtor-stars', [RealtorStarsController::class, 'index']);
+Route::delete('/realtor-stars/{id}', [UserController::class, 'destroy']);
 // Route::middleware('auth:sanctum')->group(function () {
 // });

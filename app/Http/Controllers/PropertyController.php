@@ -383,6 +383,15 @@ class PropertyController extends Controller
                 $query->where('total_units', '>', 0);
             }
 
+
+            // Filter by date (created_at)
+            if ($request->has('from_date')) {
+                $query->whereDate('created_at', '>=', $request->input('from_date'));
+            }
+            if ($request->has('to_date')) {
+                $query->whereDate('created_at', '<=', $request->input('to_date'));
+            }
+
             // Sorting and pagination
             $perPage = (int) $request->get('per_page', 10);
             $sortField = $request->get('sort_by', 'created_at');
