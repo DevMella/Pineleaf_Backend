@@ -12,6 +12,7 @@ class ContactController extends Controller
     // Public Create endpoint
     public function create(Request $request)
     {
+        
         try {
             $validated = $request->validate([
                 'firstname' => 'required|string',
@@ -43,6 +44,12 @@ class ContactController extends Controller
     // Authenticated: View All
     public function index(Request $request)
     {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+
         try {
             $query = Contact::query();
             $columns = Schema::getColumnListing('contact');

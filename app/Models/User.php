@@ -25,7 +25,8 @@ class User extends Authenticatable
         'number',
         'referral_code',
         'password',
-        'my_referral_code'
+        'my_referral_code',
+        'star'
     ];
 
 
