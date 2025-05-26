@@ -13,125 +13,144 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Log;
 use App\Models\Referral;
 use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\Controller;
 
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
-        $fields = $request->validate([
-            'fullName' => 'required|max:100',
-            'email' => 'required|email|unique:users',
-            'number' => 'required|unique:users,number|max:13',
-            'referral_code' => 'nullable|max:6',
-            'payment_method' => 'required|in:manual,paystack',
-            'password' => 'required|confirmed',
-            'payment' => 'required_if:payment_method,manual|file|mimes:png,jpeg,jpg|max:2048',
-            'amount' => 'required|numeric',
-        ]);
+{
+    $fields = $request->validate([
+        'fullName' => 'required|max:100',
+        'email' => 'required|email|unique:users',
+        'number' => 'required|unique:users,number|max:13',
+        'referral_code' => 'nullable|max:6',
+        'payment_method' => 'required|in:manual,paystack',
+        'password' => 'required|confirmed',
+        'payment' => 'required_if:payment_method,manual|file|mimes:png,jpeg,jpg|max:2048',
+        'amount' => 'required|numeric',
+    ]);
 
-        $referrer = null;
-        if ($request->filled('referral_code')) {
-            $referrer = User::where('my_referral_code', $request->referral_code)->first();
-            if (!$referrer) {
-                return response()->json(['message' => 'Invalid referral code.'], 422);
-            }
+    // Handle referral
+    $referrer = null;
+    if ($request->filled('referral_code')) {
+        $referrer = User::where('my_referral_code', $request->referral_code)->first();
+        if (!$referrer) {
+            return response()->json(['message' => 'Invalid referral code.'], 422);
         }
-
-        $myReferralCode = Str::upper(Str::random(6));
-
-        $user = User::create([
-            'fullName' => $request->fullName,
-            'email' => $request->email,
-            'number' => $request->number,
-            'password' => Hash::make($request->password),
-            'my_referral_code' => $myReferralCode,
-            'referral_code' => $request->referral_code,
-            'enabled' => $request->payment_method === 'manual' ? true : false,
-        ]);
-
-        if ($request->payment_method === 'manual' && $request->hasFile('payment')) {
-            $paymentFile = $request->file('payment');
-            $fileName = time() . '_' . $paymentFile->getClientOriginalName();
-            $paymentPath = $paymentFile->storeAs('payments', $fileName, 'public');
-
-            $transaction = Transaction::create([
-                'user_id' => $user->id,
-                'amount' => $request->amount,
-                'transaction_type' => 'registration',
-                'ref_no' => 'REG_' . now()->format('Ymd') . '_' . strtoupper(Str::random(6)),
-                'property_purchased_id' => null,
-                'units' => null,
-                'proof_of_payment' => $paymentPath,
-                'status' => 'pending',
-            ]);
-
-            Payment::create([
-                'user_id' => $user->id,
-                'ref_no' => $transaction->ref_no,
-                'transaction_id' => $transaction->id,
-            ]);
-
-            if ($referrer) {
-                $level = 1;
-                $currentReferrer = $referrer;
-                while ($currentReferrer && $level <= 2) {
-                    Referral::firstOrCreate([
-                        'referral_id' => $currentReferrer->id,
-                        'referee_id' => $user->id,
-                        'level' => $level,
-                    ]);
-                    $currentReferrer = User::where('my_referral_code', $currentReferrer->referral_code)->first();
-                    $level++;
-                }
-            }
-
-            $token = $user->createToken($request->fullName);
-
-            return response()->json([
-                'user' => $user,
-                'token' => $token->plainTextToken,
-                'message' => 'User registered successfully.',
-            ], 201);
-        }
-        if ($request->payment_method === 'paystack') {
-            $paystackResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post('https://api.paystack.co/transaction/initialize', [
-                'email' => $request->email,
-                'amount' => $request->amount * 100,
-            ]);
-
-            if (!$paystackResponse->successful()) {
-                return response()->json(['message' => 'Failed to initialize Paystack payment.'], 500);
-            }
-
-            $paymentData = $paystackResponse->json()['data'];
-
-            $transaction = Transaction::create([
-                'user_id' => $user->id,
-                'amount' => $request->amount,
-                'transaction_type' => 'registration',
-                'ref_no' => $paymentData['reference'], // save ref from paystack
-                'proof_of_payment' => $paymentData['reference'],
-                'status' => 'pending',
-            ]);
-
-            Payment::create([
-                'user_id' => $user->id,
-                'ref_no' => $paymentData['reference'],
-                'transaction_id' => $transaction->id,
-            ]);
-
-            logActivity('registration', 'User registered with Paystack pending payment.');
-
-            return response()->json([
-                'status' => 'pending_payment',
-                'message' => 'Please complete the payment via Paystack.',
-                'payment_url' => $paymentData['authorization_url'],
-                'reference' => $paymentData['reference'],
-                'user_id' => $user->id,
-            ]);
-        }
-
     }
+
+    $myReferralCode = Str::upper(Str::random(6));
+
+    $user = User::create([
+        'fullName' => $request->fullName,
+        'email' => $request->email,
+        'number' => $request->number,
+        'password' => Hash::make($request->password),
+        'my_referral_code' => $myReferralCode,
+        'referral_code' => $request->referral_code,
+        'enabled' => $request->payment_method === 'manual' ? true : false,
+    ]);
+
+    // Handle manual payment upload
+    if ($request->payment_method === 'manual' && $request->hasFile('payment')) {
+        $paymentFile = $request->file('payment');
+        $fileName = time() . '_' . $paymentFile->getClientOriginalName();
+        $paymentPath = $paymentFile->storeAs('payments', $fileName, 'public');
+
+        $transaction = Transaction::create([
+            'user_id' => $user->id,
+            'amount' => $request->amount,
+            'transaction_type' => 'registration',
+            'ref_no' => 'REG_' . now()->format('Ymd') . '_' . strtoupper(Str::random(6)),
+            'property_purchased_id' => null,
+            'units' => null,
+            'proof_of_payment' => $paymentPath,
+            'status' => 'pending',
+        ]);
+
+        Payment::create([
+            'user_id' => $user->id,
+            'ref_no' => $transaction->ref_no,
+            'transaction_id' => $transaction->id,
+        ]);
+
+        if ($referrer) {
+            $level = 1;
+            $currentReferrer = $referrer;
+            while ($currentReferrer && $level <= 2) {
+                Referral::firstOrCreate([
+                    'referral_id' => $currentReferrer->id,
+                    'referee_id' => $user->id,
+                    'level' => $level,
+                ]);
+                $currentReferrer = User::where('my_referral_code', $currentReferrer->referral_code)->first();
+                $level++;
+            }
+        }
+
+        $token = $user->createToken($request->fullName);
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token->plainTextToken,
+            'message' => 'User registered successfully.',
+        ], 201);
+    }
+
+    // Handle Paystack payment
+    if ($request->payment_method === 'paystack') {
+     $paystackSecret = config('services.paystack.secretKey');
+
+        if (!$paystackSecret) {
+            Log::error('Paystack secret key is missing.');
+            return response()->json(['message' => 'Payment configuration error.'], 500);
+        }
+
+        $paystackResponse = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $paystackSecret,
+        ])->post('https://api.paystack.co/transaction/initialize', [
+            'email' => $request->email,
+            'amount' => $request->amount * 100,
+        ]);
+
+        if (!$paystackResponse->successful()) {
+            Log::error('Paystack Init Failed', [
+                'status' => $paystackResponse->status(),
+                'response' => $paystackResponse->body(),
+            ]);
+
+            return response()->json(['message' => 'Failed to initialize Paystack payment.'], 500);
+        }
+
+        $paymentData = $paystackResponse->json()['data'];
+
+        $transaction = Transaction::create([
+            'user_id' => $user->id,
+            'amount' => $request->amount,
+            'transaction_type' => 'registration',
+            'ref_no' => $paymentData['reference'],
+            'proof_of_payment' => $paymentData['reference'],
+            'status' => 'pending',
+        ]);
+
+        Payment::create([
+            'user_id' => $user->id,
+            'ref_no' => $paymentData['reference'],
+            'transaction_id' => $transaction->id,
+        ]);
+
+        logActivity('registration', 'User registered with Paystack pending payment.');
+
+        return response()->json([
+            'status' => 'pending_payment',
+            'message' => 'Please complete the payment via Paystack.',
+            'payment_url' => $paymentData['authorization_url'],
+            'reference' => $paymentData['reference'],
+            'user_id' => $user->id,
+        ]);
+    }
+}
+
 
     public function login(Request $request)
     {

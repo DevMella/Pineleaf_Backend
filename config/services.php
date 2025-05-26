@@ -37,7 +37,13 @@ return [
     'paystack' => [
     'publicKey' => env('PAYSTACK_PUBLIC_KEY'),
     'secretKey' => env('PAYSTACK_SECRET_KEY'),
-    'paymentUrl' => env('PAYSTACK_PAYMENT_URL'),
+    'paymentUrl' => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
+    'merchantEmail' => env('MERCHANT_EMAIL', 'pineleafestates@gmail.com'),
+],
+'manual_payment' => [
+    'account_name' => env('MANUAL_ACCOUNT_NAME'),
+    'account_number' => env('MANUAL_ACCOUNT_NUMBER'),
+    'bank_name' => env('MANUAL_BANK_NAME'),
 ],
 
 ];

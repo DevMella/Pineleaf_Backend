@@ -46,7 +46,7 @@ class WithdrawController extends Controller
             return response()->json(['message' => 'Insufficient referral bonus.'], 400);
         }
 
-        $banksResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+        $banksResponse = Http::withToken(config('services.paystack.secretKey'))
             ->get('https://api.paystack.co/bank');
 
         if (!$banksResponse->successful()) {
@@ -121,7 +121,7 @@ class WithdrawController extends Controller
 
     $withdraw = Withdraw::where('transaction_id', $transaction->id)->first();
 
-    $recipientResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post(
+    $recipientResponse = Http::withToken( config('services.paystack.secretKey'))->post(
         'https://api.paystack.co/transferrecipient',
         [
             'type' => 'nuban',
@@ -138,7 +138,7 @@ class WithdrawController extends Controller
 
     $recipientCode = $recipientResponse->json()['data']['recipient_code'];
 
-    $transferResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post(
+    $transferResponse = Http::withToken(config('services.paystack.secretKey'))->post(
         'https://api.paystack.co/transfer',
         [
             'source' => 'balance',

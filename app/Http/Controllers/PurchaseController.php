@@ -14,14 +14,15 @@ use Illuminate\Support\Facades\DB;
 class PurchaseController extends Controller
 {
     public function manualInfo(Request $request)
-    {
-        return response()->json([
-            'account_name' => env('MANUAL_ACCOUNT_NAME'),
-            'account_number' => env('MANUAL_ACCOUNT_NUMBER'),
-            'bank_name' => env('MANUAL_BANK_NAME'),
-            'message' => 'Account details fetched successfully.'
-        ], 200);
-    }
+{
+    return response()->json([
+        'account_name' => config('services.manual_payment.account_name'),
+        'account_number' => config('services.manual_payment.account_number'),
+        'bank_name' => config('services.manual_payment.bank_name'),
+        'message' => 'Account details fetched successfully.'
+    ], 200);
+}
+
     public function handlePurchase(Request $request)
     {
         $request->validate([
@@ -39,7 +40,7 @@ class PurchaseController extends Controller
         $property = Property::findOrFail($request->property_purchased_id);
 
         if ($request->payment_method === 'manual') {
-            $proofPath = $request->file('payment_proof')->store('payment_proofs', 'publc ic');
+            $proofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
 
             DB::transaction(function () use ($request, $ref_no, $proofPath, $property) {
                 Transaction::create([

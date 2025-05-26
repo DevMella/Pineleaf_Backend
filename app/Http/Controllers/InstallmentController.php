@@ -38,6 +38,8 @@ class InstallmentController extends Controller
             'property_purchased_id' => $request->property_purchased_id,
             'status' => 'pending',
         ];
+
+        // Check for existing unpaid installment for this user and property
         $existingInstallment = Installment::where('user_id', $request->user_id)
             ->where('property_purchased_id', $request->property_purchased_id)
             ->whereColumn('paid_count', '<', 'installment_count')
@@ -45,11 +47,13 @@ class InstallmentController extends Controller
             ->first();
 
         if ($request->payment_method === 'manual') {
+            // Handle manual payment proof upload
             $proofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
             $transactionData['proof_of_payment'] = $proofPath;
 
             $transaction = Transaction::create($transactionData);
 
+            // Create Installment record only if none exists
             if (!$existingInstallment) {
                 Installment::create([
                     'user_id' => $request->user_id,
@@ -70,15 +74,18 @@ class InstallmentController extends Controller
                 'reference' => $refNo,
             ], 201);
         }
-        $paystackResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post(
-            'https://api.paystack.co/transaction/initialize',
-            [
-                'email' => $request->email,
-                'amount' => $request->amount * 100, 
-                'reference' => $refNo,
-                'callback_url' => url('/paystack/callback'),
-            ]
-        );
+
+        // Initialize Paystack paymen
+          $paystackResponse = Http::withHeaders([
+    'Authorization' => 'Bearer ' . config('services.paystack.secretKey'),
+    'Content-Type' => 'application/json',
+])->post('https://api.paystack.co/transaction/initialize', [
+    'email' => $request->email,
+    'amount' => $request->amount * 100,
+    'reference' => $refNo,
+]);
+        
+        
 
         if (!$paystackResponse->successful() || !isset($paystackResponse['data'])) {
             Log::error('Paystack initialization failed:', [
@@ -90,6 +97,7 @@ class InstallmentController extends Controller
         }
 
         $responseData = $paystackResponse['data'];
+        // Update ref_no with Paystack reference for accuracy
         $transactionData['ref_no'] = $responseData['reference'];
 
         $transaction = Transaction::create($transactionData);
