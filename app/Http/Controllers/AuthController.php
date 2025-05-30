@@ -152,7 +152,7 @@ class AuthController extends Controller
 }
 
 
-    public function login(Request $request)
+     public function login(Request $request)
     {
         $fields = $request->validate([
             'login' => 'required',
@@ -171,7 +171,7 @@ class AuthController extends Controller
                     'fullName' => env('ADMIN_NAME', 'Admin'),
                     'password' => bcrypt($adminPassword),
                     'role' => 'admin',
-                    'enabled' => 1,
+                    'enabled' => true,
                 ]);
             } else {
                 $admin->role = 'admin';
@@ -212,10 +212,44 @@ class AuthController extends Controller
         }
 
         if (!$user->enabled) {
-            return response([
-                'message' => 'Your account is not activated yet.'
-            ], 403);
-        }
+    $ref_no = 'REG_' . uniqid();
+
+    // Step 2: Prepare Paystack payment data
+    $paystackData = [
+        'email' => $user->email,
+        'amount' => 5000000, // in kobo
+        'reference' => $ref_no,
+        
+    ];
+
+    // Step 3: Initialize Paystack payment
+    $paystackResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+        ->post('https://api.paystack.co/transaction/initialize', $paystackData);
+
+    $result = $paystackResponse->json();
+
+    if (!$result['status']) {
+        return response([
+            'message' => 'Failed to initialize payment. Please try again.'
+        ], 500);
+    }
+
+    // Step 4: Save transaction with 'pending' status
+    Transaction::create([
+        'user_id' => $user->id,
+        'ref_no' => $ref_no,
+        'amount' => 5000, // In naira for storage
+        'transaction_type' => 'registration',
+        'status' => 'pending'
+    ]);
+
+    // Step 5: Return payment URL
+    return response([
+        'message' => 'Your payment is not successful and your account is not activated yet. Please complete payment.',
+        'authorization_url' => $result['data']['authorization_url']
+    ], 403);
+}
+
 
         $token = $user->createToken($user->fullName);
         logActivity('login', 'User logged in successfully');
@@ -226,7 +260,7 @@ class AuthController extends Controller
     }
 
     public function logout(Request $request)
-    {
+    {   
         $user = $request->user();
         $user->tokens->each(function ($token) {
             $token->delete();

@@ -3,6 +3,10 @@
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminActions;
+use App\Http\Controllers\subscribersController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\TestimonialsController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\ManualController;
@@ -15,6 +19,7 @@ use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GalleryController;
 
 Route::get('/', function () {
@@ -48,8 +53,11 @@ Route::post('/manual-confirm-installment', [ManualController::class, 'confirmIns
 // Route::post('/confirm-installment', [PaystackController::class, 'installmentPayment'])->middleware('auth:sanctum');
 Route::post('/withdraw', [WithdrawController::class, 'initiateWithdrawal'])->middleware('auth:sanctum');
 Route::post('/withdraw/confirm', [WithdrawController::class, 'confirmWithdrawal'])->middleware('auth:sanctum');
-// Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle']);
-Route::post('/paystack/webhook',[PaystackWebhookController::class],'handle');
+Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle']);
+// Route::post('/paystack/webhook', [PaystackWebhookController::class], 'handle');
+
+Route::middleware('auth:sanctum')->post('/profile/update', [ProfileController::class, 'updateProfile']);
+
 
 
 // ALL ADMIN ROUTES

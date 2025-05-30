@@ -26,7 +26,10 @@ class User extends Authenticatable
         'referral_code',
         'password',
         'my_referral_code',
-        'star'
+        'star',
+        'bank_name',
+        'account_name',
+        'account_number',
     ];
 
 

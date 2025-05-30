@@ -136,7 +136,7 @@ class PaystackWebhookController extends Controller
             }
             elseif ($transaction->transaction_type === 'installment_purchase') {
     $userId = $transaction->user_id;
-    $propertyId = $transaction->property_purchased_id;
+    $propertyId = $transaction->prxoperty_purchased_id;
     $amount = $transaction->amount;
 
     // Check for ongoing installment

@@ -187,7 +187,7 @@ class PropertyController extends Controller
         //     return response()->json(['message' => 'Unauthorized'], 403);
         // }
 
-        $property = Property::find($id);
+        $property = Property::find($id);  
         if (!$property) {
             return response()->json(['message' => 'Property not found'], 404);
         }
@@ -255,7 +255,10 @@ class PropertyController extends Controller
             }
 
             $property->update($fields);
-
+            $property = $property->refresh();
+            $property->landmark = json_decode($property->landmark, true);
+            $property->images = json_decode($property->images, true);
+            $property->property_features = json_decode($property->property_features, true);
             return response()->json([
                 'success' => true,
                 'message' => 'Property updated successfully',
