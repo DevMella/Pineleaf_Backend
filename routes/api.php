@@ -71,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // PROPERTIES ROUTES
 Route::get('/properties/search', [PropertyController::class, 'search']);
 Route::put('/properties/{id}', [PropertyController::class, 'update']);
+    Route::get('/properties/search/{id}', [PropertyController::class, 'each']);
 
 
 Route::middleware('auth:sanctum')->group(function () {

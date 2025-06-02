@@ -296,6 +296,23 @@ class PropertyController extends Controller
             ], 404);
         }
     }
+    public function each($id)
+    {
+        try {
+            $property = Property::findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $property,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Property not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
 
     /**
      * Delete the specified property.
