@@ -74,7 +74,6 @@ Route::middleware('auth:sanctum')->group(function () {
 // PROPERTIES ROUTES
 Route::get('/properties/search', [PropertyController::class, 'search']);
 Route::put('/properties/{id}', [PropertyController::class, 'update']);
-Route::get('/properties/search/{id}', [PropertyController::class, 'each']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -164,17 +163,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/realtor-stars', [RealtorStarsController::class, 'index']);
     Route::delete('/realtor-stars/{id}', [UserController::class, 'destroy']);
 });
-
-
-// land verify
-
- Route::post('/land', [LandController::class, 'store']);
-  Route::get('/allland', [LandController::class, 'index']);
-  
-  
-//   password reset
-
-// FORGOT PASSWORD
-Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
-Route::get('/reset', [PasswordResetController::class, 'showResetForm']); // optional for frontend verification
-Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);

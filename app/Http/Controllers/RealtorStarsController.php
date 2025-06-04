@@ -17,9 +17,9 @@ class RealtorStarsController extends Controller
      */
     public function index(Request $request)
     {
-        // if ($request->user()?->role !== 'admin') {
-        //     return response()->json(['message' => 'Unauthorized'], 403);
-        // }
+        if ($request->user()?->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $perPage = max((int) $request->input('per_page', 50), 1);
         $columns = Schema::getColumnListing('users');
