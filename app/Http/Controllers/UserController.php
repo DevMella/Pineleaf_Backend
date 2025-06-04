@@ -56,7 +56,7 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(Request $request, string $id)
-    {
+    { 
         $admin = $request->user();
         if (!$admin || $admin->role !== 'admin') {
             return response()->json(['message' => 'Unauthorized'], 403);

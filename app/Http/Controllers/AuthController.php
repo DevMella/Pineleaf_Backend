@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Referral;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Controller;
+use App\Mail\RegistrationSuccessMail;
+use Illuminate\Support\Facades\Mail;
+
 
 class AuthController extends Controller
 {
@@ -50,7 +53,8 @@ class AuthController extends Controller
         'referral_code' => $request->referral_code,
         'enabled' => $request->payment_method === 'manual' ? true : false,
     ]);
-
+    $firstName = explode(' ', $user->fullName)[0];
+    Mail::to($user->email)->send(new RegistrationSuccessMail($user));
     // Handle manual payment upload
     if ($request->payment_method === 'manual' && $request->hasFile('payment')) {
         $paymentFile = $request->file('payment');

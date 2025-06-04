@@ -173,4 +173,43 @@ class AdminActions extends Controller
             ], 500);
         }
     }
+    
+    public function updateUserDetails(Request $request)
+{
+    $admin = $request->user();
+
+    if (!$admin || $admin->role !== 'admin') {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'email' => 'required|email',
+        'number' => 'required',
+        'fullName' => 'required|string|max:255',
+    ]);
+
+    $user = User::find($request->user_id);
+
+    // Check if email already exists (except current user)
+    if (User::where('email', $request->email)->where('id', '!=', $user->id)->exists()) {
+        return response()->json(['message' => 'Email already in use'], 400);
+    }
+
+    // Check if phone already exists (except current user)
+    if (User::where('number', $request->number)->where('id', '!=', $user->id)->exists()) {
+        return response()->json(['message' => 'Phone number already in use'], 400);
+    }
+
+    // Update user
+    $user->email = $request->email;
+    $user->number = $request->number;
+    $user->fullName = $request->fullName;
+    $user->save();
+
+    return response()->json([
+        'message' => 'User details updated successfully',
+        'user' => $user,
+    ]);
+}
 }

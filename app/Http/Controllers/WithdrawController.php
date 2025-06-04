@@ -12,84 +12,101 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+
 
 class WithdrawController extends Controller
 {
-     public function initiateWithdrawal(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'email' => 'required|email',
-            'amount' => 'required|numeric|min:1',
-            'bank_name' => 'required|string',
-            'account_number' => 'required|string',
-            'account_name' => 'required|string',
-            'withdraw_from' => 'required|in:balance,referral_bonus',
-        ]);
-           Log::info('Withdraw From:', ['value' => $request->input('withdraw_from')]);
-           $withdrawFrom = $request->input('withdraw_from');
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+   
+   public function initiateWithdrawal(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'user_id' => 'required|exists:users,id',
+        'email' => 'required|email',
+        'amount' => 'required|numeric|min:1',
+        'bank_name' => 'required|string',
+        'account_number' => 'required|string',
+        'account_name' => 'required|string',
+        'withdraw_from' => 'required|in:balance,referral_bonus',
+        'pin' => 'required|string|min:4|max:4',
+    ]);
 
-        $user = User::find($request->user_id);
-
-        if ($user->email !== $request->email) {
-            return response()->json(['message' => 'Email does not match our records.'], 400);
-        }
-
-        if ( $withdrawFrom  === 'balance' && $user->balance < $request->amount) {
-            return response()->json(['message' => 'Insufficient balance.'], 400);
-        }
-
-        if ( $withdrawFrom  === 'referral_bonus' && $user->referral_bonus < $request->amount) {
-            return response()->json(['message' => 'Insufficient referral bonus.'], 400);
-        }
-
-        $banksResponse = Http::withToken(config('services.paystack.secretKey'))
-            ->get('https://api.paystack.co/bank');
-
-        if (!$banksResponse->successful()) {
-            return response()->json(['message' => 'Unable to fetch bank list. Try again.'], 500);
-        }
-
-        $banks = $banksResponse->json()['data'];
-        $matchedBank = collect($banks)->firstWhere('name', $request->bank_name);
-
-        if (!$matchedBank) {
-            return response()->json(['message' => 'Invalid bank name provided.'], 400);
-        }
-
-        $bankCode = $matchedBank['code'];
-        $refNo = 'WD-' . strtoupper(Str::random(10));
-
-        $transaction = Transaction::create([
-            'user_id' => $user->id,
-            'amount' => $request->amount,
-            'transaction_type' => 'withdraw',
-            'status' => 'pending',
-            'ref_no' => $refNo,
-            'meta' => json_encode(['withdraw_from' => $request->withdraw_from])
-        ]);
-
-        $withdraw = Withdraw::create([
-            'transaction_id' => $transaction->id,
-            'bank_name' => $request->bank_name,
-            'account_name' => $request->account_name,
-            'account_number' => $request->account_number,
-            'status' => 'pending',
-        ]);
-
-        logActivity('Withdrawal', 'User placed a withdrawal request');
-
-        return response()->json([
-            'message' => 'Withdrawal request initiated. Awaiting confirmation.',
-            'reference' => $refNo,
-            'bank_code' => $bankCode,
-            'transaction' => $transaction,
-            'withdraw' => $withdraw
-        ]);
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+
+    $user = User::find($request->user_id);
+
+    if ($user->email !== $request->email) {
+        return response()->json(['message' => 'Email does not match our records.'], 400);
+    }
+
+    if ($request->withdraw_from === 'balance' && $user->balance < $request->amount) {
+        return response()->json(['message' => 'Insufficient balance.'], 400);
+    }
+
+    if ($request->withdraw_from === 'referral_bonus' && $user->referral_bonus < $request->amount) {
+        return response()->json(['message' => 'Insufficient referral bonus.'], 400);
+    }
+
+    // Handle pin setup or verification (NO HASHING)
+    if (!$user->pin) {
+        // Save PIN directly (insecure)
+        $user->pin = $request->pin;
+        $user->save();
+    } else {
+        // Direct comparison
+        if ($user->pin !== $request->pin) {
+            return response()->json(['message' => 'Incorrect PIN.'], 401);
+        }
+    }
+
+    // Fetch bank list
+    $banksResponse = Http::withToken(config('services.paystack.secretKey'))
+        ->get('https://api.paystack.co/bank');
+
+    if (!$banksResponse->successful()) {
+        return response()->json(['message' => 'Unable to fetch bank list. Try again.'], 500);
+    }
+
+    $banks = $banksResponse->json()['data'];
+    $matchedBank = collect($banks)->firstWhere('name', $request->bank_name);
+
+    if (!$matchedBank) {
+        return response()->json(['message' => 'Invalid bank name provided.'], 400);
+    }
+
+    $bankCode = $matchedBank['code'];
+    $refNo = 'WD-' . strtoupper(Str::random(10));
+
+    $transaction = Transaction::create([
+        'user_id' => $user->id,
+        'amount' => $request->amount,
+        'transaction_type' => 'withdraw',
+        'status' => 'pending',
+        'ref_no' => $refNo,
+        'meta' => json_encode(['withdraw_from' => $request->withdraw_from])
+    ]);
+
+    $withdraw = Withdraw::create([
+        'transaction_id' => $transaction->id,
+        'bank_name' => $request->bank_name,
+        'account_name' => $request->account_name,
+        'account_number' => $request->account_number,
+        'status' => 'pending',
+    ]);
+
+    logActivity('Withdrawal', 'User placed a withdrawal request');
+
+    return response()->json([
+        'message' => 'Withdrawal request initiated. Awaiting confirmation.',
+        'reference' => $refNo,
+        'bank_code' => $bankCode,
+        'transaction' => $transaction,
+        'withdraw' => $withdraw
+    ]);
+}
+
 
     public function confirmWithdrawal(Request $request)
 {

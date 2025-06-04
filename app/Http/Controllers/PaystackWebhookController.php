@@ -11,6 +11,9 @@ use App\Models\Property;
 use App\Models\Installment;
 use App\Models\Payment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RegistrationSuccessMail;
+use App\Mail\PurchaseSuccessMail;
 
 class PaystackWebhookController extends Controller
 {
@@ -56,6 +59,8 @@ class PaystackWebhookController extends Controller
                 if (!$user->enabled) {
                     $user->enabled = true;
                     $user->save();
+                    Mail::to($user->email)->send(new RegistrationSuccessMail($user));
+
                 }
 
                 Payment::create([
@@ -103,7 +108,8 @@ class PaystackWebhookController extends Controller
                 $amount = $transaction->amount;
                 $user->balance += $amount * 0.10;
                 $user->save();
-
+                $firstName = explode(' ', $user->fullName)[0];
+                Mail::to($user->email)->send(new \App\Mail\PurchaseSuccessMail($firstName, $amount, $ref_no));
                 // Referral bonuses
                 $referrals = Referral::where('referee_id', $user->id)->get();
 

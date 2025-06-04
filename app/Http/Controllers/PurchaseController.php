@@ -10,6 +10,8 @@ use App\Models\Transaction;
 use App\Models\Property;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Mail\PurchaseSuccessMail;
+use Illuminate\Support\Facades\Mail;
 
 class PurchaseController extends Controller
 {
@@ -43,7 +45,7 @@ class PurchaseController extends Controller
             $proofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
 
             DB::transaction(function () use ($request, $ref_no, $proofPath, $property) {
-                Transaction::create([
+                $transaction = Transaction::create([
                     'user_id' => $request->user_id,
                     'amount' => $request->amount,
                     'transaction_type' => 'purchase',
@@ -55,6 +57,12 @@ class PurchaseController extends Controller
                 ]);
 
                 $property->increment('unit_sold', $request->units);
+                $user = User::find($request->user_id);
+                $firstName = explode(' ', $user->fullName)[0]; 
+                $amount = $transaction->amount;
+                $ref_no = $transaction->ref_no;
+
+                Mail::to($user->email)->send(new PurchaseSuccessMail($firstName, $amount, $ref_no));
             });
 
             return response()->json([
