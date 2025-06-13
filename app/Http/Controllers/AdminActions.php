@@ -65,6 +65,45 @@ class AdminActions extends Controller
         }
     }
 
+    public function eachReferral(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $referral = Referral::findOrFail($id);
+            return response()->json($referral);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve referral',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteEachReferral(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $referral = Referral::findOrFail($id);
+            $referral->delete();
+            return response()->json(['message' => 'Referral deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete referral',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      *
@@ -116,6 +155,45 @@ class AdminActions extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve transactions',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function eachTransaction(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $transaction = Transaction::findOrFail($id);
+            return response()->json($transaction);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve transaction',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteEachTransaction(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $transaction = Transaction::findOrFail($id);
+            $transaction->delete();
+            return response()->json(['message' => 'Transaction deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete transaction',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -173,43 +251,43 @@ class AdminActions extends Controller
             ], 500);
         }
     }
-    
-    public function updateUserDetails(Request $request)
-{
-    $admin = $request->user();
 
-    if (!$admin || $admin->role !== 'admin') {
-        return response()->json(['message' => 'Unauthorized'], 403);
+    public function eachPurchase(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $transaction = Transaction::where('transaction_type', 'purchase')->findOrFail($id);
+            return response()->json($transaction);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve transaction',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    $request->validate([
-        'user_id' => 'required|exists:users,id',
-        'email' => 'required|email',
-        'number' => 'required',
-        'fullName' => 'required|string|max:255',
-    ]);
+    public function deleteEachPurchase(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-    $user = User::find($request->user_id);
-
-    // Check if email already exists (except current user)
-    if (User::where('email', $request->email)->where('id', '!=', $user->id)->exists()) {
-        return response()->json(['message' => 'Email already in use'], 400);
+        try {
+            $transaction = Transaction::where('transaction_type', 'purchase')->findOrFail($id);
+            $transaction->delete();
+            return response()->json(['message' => 'Transaction deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete transaction',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
-    // Check if phone already exists (except current user)
-    if (User::where('number', $request->number)->where('id', '!=', $user->id)->exists()) {
-        return response()->json(['message' => 'Phone number already in use'], 400);
-    }
-
-    // Update user
-    $user->email = $request->email;
-    $user->number = $request->number;
-    $user->fullName = $request->fullName;
-    $user->save();
-
-    return response()->json([
-        'message' => 'User details updated successfully',
-        'user' => $user,
-    ]);
-}
 }

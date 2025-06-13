@@ -68,7 +68,11 @@ Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle']);
 
 Route::middleware('auth:sanctum')->post('/profile/update', [ProfileController::class, 'updateProfile']);
 
+
+
 // ALL ADMIN ROUTES
+
+// USER ROUTES
 
 // USER ROUTES
 Route::middleware('auth:sanctum')->group(function () {
@@ -76,10 +80,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/users/search', [UserController::class, 'search']);
     Route::delete('/admin/users/{id}', [UserController::class, 'destroy']);
     Route::get('/admin/users/{id}', [UserController::class, 'each']);
+    Route::get('/admin/users/{id}', [UserController::class, 'each']);
 });
 
 // PROPERTIES ROUTES
 Route::get('/properties/search', [PropertyController::class, 'search']);
+Route::get('/properties/search/{id}', [PropertyController::class, 'each']);
 Route::get('/properties/search/{id}', [PropertyController::class, 'each']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/properties/create', [PropertyController::class, 'create']);
@@ -88,10 +94,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
     Route::put('/properties/{id}', [PropertyController::class, 'update']);
+    Route::put('/properties/{id}', [PropertyController::class, 'update']);
 });
 
 // TRANSACTION ROUTES
+// TRANSACTION ROUTES
 Route::get('/admin/transactions', [AdminActions::class, 'transactions'])->middleware('auth:sanctum');
+Route::get('/admin/transactions/{id}', [AdminActions::class, 'eachTransaction'])->middleware('auth:sanctum');
+Route::delete('/admin/transactions/{id}', [AdminActions::class, 'deleteEachTransaction'])->middleware('auth:sanctum');
+
+// PURCHASE ROUTES
 Route::get('/admin/transactions/{id}', [AdminActions::class, 'eachTransaction'])->middleware('auth:sanctum');
 Route::delete('/admin/transactions/{id}', [AdminActions::class, 'deleteEachTransaction'])->middleware('auth:sanctum');
 
@@ -101,7 +113,13 @@ Route::get('/admin/purchase/{id}', [AdminActions::class, 'eachPurchase'])->middl
 Route::delete('/admin/purchase/{id}', [AdminActions::class, 'deleteEachPurchase'])->middleware('auth:sanctum');
 
 // REFERRAL ROUTES
+Route::get('/admin/purchase/{id}', [AdminActions::class, 'eachPurchase'])->middleware('auth:sanctum');
+Route::delete('/admin/purchase/{id}', [AdminActions::class, 'deleteEachPurchase'])->middleware('auth:sanctum');
+
+// REFERRAL ROUTES
 Route::get('/admin/referrals', [AdminActions::class, 'Referral'])->middleware('auth:sanctum');
+Route::get('/admin/referrals/{id}', [AdminActions::class, 'eachReferral'])->middleware('auth:sanctum');
+Route::delete('/admin/referrals/{id}', [AdminActions::class, 'deleteEachReferral'])->middleware('auth:sanctum');
 Route::get('/admin/referrals/{id}', [AdminActions::class, 'eachReferral'])->middleware('auth:sanctum');
 Route::delete('/admin/referrals/{id}', [AdminActions::class, 'deleteEachReferral'])->middleware('auth:sanctum');
 
@@ -177,21 +195,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/realtor-stars', [RealtorStarsController::class, 'index']);
     Route::delete('/realtor-stars/{id}', [UserController::class, 'destroy']);
 });
-
-
-
-// land verify
-
- Route::post('/land', [LandController::class, 'store']);
-  Route::get('/allland', [LandController::class, 'index']);
-  
-  
-//   password reset
-
-// FORGOT PASSWORD
-Route::post('/forgot-password', [PasswordResetController::class, 'updatePassword']);
-Route::post('/reset-password', [PasswordResetController::class, 'sendResetLink']);
-
-
-Route::get('/all_referrals', [ReferralController::class, 'allReferrals']);
-Route::get('/each_referrals', [ReferralController::class, 'userReferrals'])->middleware('auth:sanctum');

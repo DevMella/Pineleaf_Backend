@@ -68,6 +68,18 @@ class UserController extends Controller
         }
         return response()->json(['message' => 'User not found'], 404);
     }
+    public function each(Request $request, string $id)
+    {
+        $admin = $request->user();
+        if (!$admin || $admin->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $user = User::find($id);
+        if ($user) {
+            return response()->json(['message' => 'User deleted successfully', 'user' => $user], 200);
+        }
+        return response()->json(['message' => 'User not found'], 404);
+    }
 
     /**
      * Display a listing of the resource.
@@ -118,11 +130,11 @@ class UserController extends Controller
         $logs = Transaction::where('user_id', $userId)
                     ->orderBy('created_at', 'desc')
                     ->get();
-    
+
         if ($logs->isEmpty()) {
             return response()->json(['message' => 'No notification found for this user'], 404);
         }
-    
+
         return response()->json([
             'user_id' => $userId,
             'logs' => $logs,
