@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\DB;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WithdrawalConfirmed;
+
 
 
 class WithdrawController extends Controller
@@ -188,6 +191,8 @@ class WithdrawController extends Controller
 
         $withdraw->status = 'confirmed';
         $withdraw->save();
+        Mail::to($user->email)->send(new WithdrawalConfirmed($user, $transaction, $withdraw));
+
     });
 
     logActivity('Withdrawal_verification', 'User withdrawal successfully confirmed and disbursed');

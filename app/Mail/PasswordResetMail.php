@@ -21,7 +21,7 @@ class PasswordResetMail extends Mailable
 
     public function build()
     {
-        $resetUrl = url('/reset-password-form?token=' . $this->token); 
+       $resetUrl = 'https://reactpineleafrevamp.vercel.app/#/reset-password?token=' . $this->token;
 
         return $this->subject('Reset Your Password')
             ->view('emails.password_reset')

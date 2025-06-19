@@ -54,9 +54,9 @@ class AuthController extends Controller
         'enabled' => $request->payment_method === 'manual' ? true : false,
     ]);
     $firstName = explode(' ', $user->fullName)[0];
-    Mail::to($user->email)->send(new RegistrationSuccessMail($user));
+    // Mail::to($user->email)->send(new RegistrationSuccessMail($user));
     // Handle manual payment upload
-    if ($request->payment_method === 'manual' && $request->hasFile('payment')) {
+    if ($request->paymmaent_method === 'manual' && $request->hasFile('payment')) {
         $paymentFile = $request->file('payment');
         $fileName = time() . '_' . $paymentFile->getClientOriginalName();
         $paymentPath = $paymentFile->storeAs('payments', $fileName, 'public');
@@ -115,6 +115,7 @@ class AuthController extends Controller
         ])->post('https://api.paystack.co/transaction/initialize', [
             'email' => $request->email,
             'amount' => $request->amount * 100,
+            'callback_url' => 'https://dashboard.pineleafestates.com',
         ]);
 
         if (!$paystackResponse->successful()) {
@@ -242,7 +243,7 @@ class AuthController extends Controller
     Transaction::create([
         'user_id' => $user->id,
         'ref_no' => $ref_no,
-        'amount' => 5000, // In naira for storage
+        'amount' => 50000, // In naira for storage
         'transaction_type' => 'registration',
         'status' => 'pending'
     ]);

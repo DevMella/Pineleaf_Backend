@@ -14,10 +14,10 @@
 
     <!-- Main Content -->
     <div style="padding: 20px 30px; max-width: 700px; margin: auto; background-color:#fff;">
-        <h2 style="text-align:center; color:#2F5318; font-size:28px;">Your Purchase was Successful</h2>
+        <h2 style="text-align:center; color:#2F5318; font-size:28px;">Your Installment Purchase was Successful</h2>
         
         <p><strong>Hi {{ $firstName }},</strong></p>
-        <p style="line-height: 1.6;">Great news! Your land purchase has been confirmed.</p>
+        <p style="line-height: 1.6;">Great news! Your land purchase installmentally has been confirmed.</p>
         
         <p><strong>Details:</strong></p>
         <p style="line-height: 1.6;">Amount: ₦{{ number_format($transaction->amount, 2) }}</p>
@@ -36,19 +36,19 @@
     </div>
 
     <!-- Footer -->
-    <div style="background-color: rgba(24, 83, 29, 0.5); text-align:center; padding:20px 0; margin-top:30px;">
-        <p style="color: #fbfcfb; font-size: 16px; margin-bottom: 10px;"><strong>Follow Us</strong></p>
+     <footer style="background-color: #18531D80; padding: 20px 0; margin-top: 50px;">
+    <div class="follow">
+      <p style="margin: 10px 0; font-size: 20px; text-align: center;"><b>Follow Us</b></p>
+      <div style="text-align: center; padding-bottom: 20px;">
+          <img src="https://stage.pineleafestates.com/_next/image?url=%2Fimg%2Ffacebook.svg.png&w=32&q=75" alt="" style="width: 25px; margin-right: 15px; display: inline-block;">
         
-        <!-- Social Icons (simple fallback if SVGs are not needed) -->
-        <div style="display:flex; justify-content:center; gap:15px;align-items:center">
-            <a href="#" style="display:inline-block;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook" style="width:24px;">
-            </a>
-            <a href="#" style="display:inline-block;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" style="width:24px;">
-            </a>
-        </div>
+          <img src="https://stage.pineleafestates.com/_next/image?url=%2Fimg%2Finstagram.png&w=32&q=75" alt="" style="width: 25px; margin-right: 15px; display: inline-block;">
+        
+          <img src="https://stage.pineleafestates.com/_next/image?url=%2Fimg%2Fwhatsapp.png&w=32&q=75" alt="" style="width: 25px; display: inline-block;">
     </div>
+    </div>
+    <p style="text-align: center; color: #fbfcfb;">&copy; Pineleaf Estate</p>
+  </footer>
 
 </body>
 </html>

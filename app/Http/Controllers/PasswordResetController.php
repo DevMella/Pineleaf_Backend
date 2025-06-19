@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use App\Mail\LoginNotificationMail;
 
 class PasswordResetController extends Controller
 {
@@ -67,6 +68,13 @@ class PasswordResetController extends Controller
     $user->reset_token = null;
     $user->reset_expires_at = null;
     $user->save();
+
+    $browser = $request->header('User-Agent'); // or use a parser like jenssegers/agent
+    $location = $request->ip(); // You can use IP-based location services here
+    $loginTime = now()->format('l, F j, Y h:i A');
+
+    // Send login notification mail
+    Mail::to($user->email)->send(new LoginNotificationMail($user, $browser, $location, $loginTime));
 
     return response()->json(['message' => 'Password successfully updated.']);
 }
